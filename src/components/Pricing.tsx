@@ -78,7 +78,7 @@ export default function Pricing() {
 
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <p className="text-sm text-gray-400">{plan.desc}</p>
+                <p className="text-sm text-gray-300">{plan.desc}</p>
               </div>
 
               <div className="mb-6">
@@ -118,7 +118,7 @@ export default function Pricing() {
                 className={`w-full py-2.5 rounded-xl font-medium transition mt-auto ${
                   plan.highlight
                     ? "bg-indigo-600 hover:bg-indigo-500 text-white"
-                    : "bg-[var(--surface-hover)] hover:bg-indigo-600/20 text-gray-200 border border-[var(--border)] hover:border-indigo-500/30"
+                    : "bg-[var(--surface-hover)] hover:bg-indigo-600/20 text-white border border-gray-600 hover:border-indigo-500/30"
                 }`}
               >
                 {plan.cta}
