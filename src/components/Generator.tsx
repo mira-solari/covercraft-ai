@@ -13,9 +13,32 @@ export default function Generator() {
   const [showExtras, setShowExtras] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [generationCount, setGenerationCount] = useState(0);
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    setIsUploading(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/parse-resume", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to parse resume");
+      setResume(data.text);
+      setUploadedFileName(file.name);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!resume.trim() || !jobDescription.trim()) {
@@ -125,13 +148,36 @@ export default function Generator() {
           <div className="space-y-4">
             {/* Resume Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                📄 Your Resume / Experience
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-300">
+                  📄 Your Resume / Experience
+                </label>
+                <label className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg transition text-gray-400 hover:text-white cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".pdf,.txt,.docx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  {isUploading ? "Parsing..." : "📎 Upload PDF"}
+                </label>
+              </div>
+              {uploadedFileName && (
+                <div className="text-xs text-green-400 mb-1 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Loaded from {uploadedFileName}
+                </div>
+              )}
               <textarea
                 value={resume}
-                onChange={(e) => setResume(e.target.value)}
-                placeholder="Paste your resume text here... Include your work experience, skills, education, and achievements."
+                onChange={(e) => { setResume(e.target.value); setUploadedFileName(""); }}
+                placeholder="Paste your resume text here, or upload a PDF above. Include your work experience, skills, education, and achievements."
                 className="w-full h-48 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition resize-none text-sm"
               />
               <div className="text-xs text-gray-600 mt-1">
