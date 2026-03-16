@@ -29,7 +29,7 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are CoverCraft AI, an expert cover letter writer with 20 years of experience in HR and recruiting.
+const SYSTEM_PROMPT = `You are ApplyFaster, an expert cover letter writer with 20 years of experience in HR and recruiting.
 
 Your job is to write a compelling, tailored cover letter based on the candidate's resume and the job description provided.
 

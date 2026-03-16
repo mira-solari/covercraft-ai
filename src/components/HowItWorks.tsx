@@ -64,7 +64,7 @@ export default function HowItWorks() {
             { val: "30s", label: "Average generation time" },
             { val: "0", label: "Generic templates used" },
             { val: "100%", label: "Tailored to each job" },
-            { val: "Free", label: "First letter, no signup" },
+            { val: "Free", label: "First letter, no strings" },
           ].map((stat) => (
             <div key={stat.label} className="p-4">
               <div className="text-2xl font-bold gradient-text">{stat.val}</div>

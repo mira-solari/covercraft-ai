@@ -5,10 +5,10 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">C</span>
+              <span className="text-white font-bold text-xs">⚡</span>
             </div>
             <span className="text-sm font-semibold">
-              Cover<span className="gradient-text">Craft</span> AI
+              Apply<span className="gradient-text">Faster</span>
             </span>
           </div>
 
@@ -19,13 +19,13 @@ export default function Footer() {
             <a href="#" className="hover:text-gray-300 transition">
               Terms
             </a>
-            <a href="mailto:support@elysianventures.vc" className="hover:text-gray-300 transition">
+            <a href="mailto:support@applyfaster.ai" className="hover:text-gray-300 transition">
               Contact
             </a>
           </div>
 
           <p className="text-xs text-gray-600">
-            © {new Date().getFullYear()} Elysian Ventures. All rights reserved.
+            © {new Date().getFullYear()} ApplyFaster. All rights reserved.
           </p>
         </div>
       </div>

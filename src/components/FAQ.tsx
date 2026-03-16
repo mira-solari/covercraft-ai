@@ -4,8 +4,8 @@ import { useState } from "react";
 
 const faqs = [
   {
-    q: "How does CoverCraft AI work?",
-    a: "You paste your resume and a job description. Our AI analyzes both, identifies the key requirements and qualifications, then crafts a cover letter that maps your specific experience to what the employer is looking for. Each letter is unique and tailored.",
+    q: "How does ApplyFaster work?",
+    a: "Paste your resume and a job description. ApplyFaster analyzes both, identifies the key requirements and qualifications, then crafts a cover letter that maps your specific experience to what the employer is looking for. Each letter is unique and tailored — no templates.",
   },
   {
     q: "Will my cover letter be unique?",
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "How is this different from ChatGPT?",
-    a: "CoverCraft is purpose-built for cover letters. Our prompts are fine-tuned through thousands of iterations specifically for this use case. You get consistently better results than a general-purpose chatbot, in a fraction of the time — no prompt engineering required.",
+    a: "ApplyFaster is purpose-built for cover letters. Our prompts are fine-tuned specifically for this use case — mapping your experience to job requirements. You get consistently better results than a general-purpose chatbot, in a fraction of the time, no prompt engineering required.",
   },
 ];
 

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 interface HeaderProps {
   onGetStarted: () => void;
 }
@@ -13,10 +11,10 @@ export default function Header({ onGetStarted }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
+              <span className="text-white font-bold text-sm">⚡</span>
             </div>
             <span className="text-lg font-bold">
-              Cover<span className="gradient-text">Craft</span>
+              Apply<span className="gradient-text">Faster</span>
             </span>
           </div>
 

@@ -1,4 +1,4 @@
-# CoverCraft AI — Launch Posts
+# ApplyFaster — Launch Posts
 
 ## Reddit: r/jobs
 
@@ -17,7 +17,7 @@ It actually reads both inputs and maps your specific experience to the job requi
 
 **Your first letter is completely free** — no signup, no email, no credit card. Just paste and go.
 
-🔗 [covercraft-ai-five.vercel.app](https://covercraft-ai-five.vercel.app)
+🔗 [applyfaster.ai](https://applyfaster.ai)
 
 I'd genuinely love feedback on the quality of the letters. I've been iterating on the AI prompts to make sure the output sounds human and specific (not the generic "I am writing to express my interest in..." garbage).
 
@@ -38,7 +38,7 @@ Pick a tone (professional, enthusiastic, or conversational), and you get a polis
 
 **First letter is free, no signup required.**
 
-🔗 [covercraft-ai-five.vercel.app](https://covercraft-ai-five.vercel.app)
+🔗 [applyfaster.ai](https://applyfaster.ai)
 
 Would love to hear what career advisors and job seekers think about the output quality. I'm actively improving it based on feedback.
 
@@ -51,7 +51,7 @@ Would love to hear what career advisors and job seekers think about the output q
 **Body:**
 Quick share — I built a cover letter generator that actually reads your resume and the job description to create something specific (not template-based).
 
-Free to try, no signup: [covercraft-ai-five.vercel.app](https://covercraft-ai-five.vercel.app)
+Free to try, no signup: [applyfaster.ai](https://applyfaster.ai)
 
 Would love feedback on the output quality from people who know what good cover letters look like!
 
@@ -59,7 +59,7 @@ Would love feedback on the output quality from people who know what good cover l
 
 ## Hacker News (Show HN)
 
-**Title:** Show HN: CoverCraft AI – Tailored cover letters from your resume + job description in 30s
+**Title:** Show HN: ApplyFaster – Tailored cover letters from your resume + job description in 30s
 
 **Body:**
 I built a cover letter generator that takes two inputs: your resume and a job description. It maps your specific experience to the job requirements and generates a tailored letter in ~30 seconds.
@@ -72,7 +72,7 @@ Key design decisions:
 - Three tone options (professional/enthusiastic/conversational)
 - No stored data — inputs are processed and discarded
 
-Free to try: https://covercraft-ai-five.vercel.app
+Free to try: https://applyfaster.ai
 
 I'm curious what HN thinks about the output quality and whether the "wrapper around an LLM" criticism applies here. I'd argue the value is in the prompt engineering + UX that makes it accessible to non-technical job seekers.
 
@@ -81,7 +81,7 @@ I'm curious what HN thinks about the output quality and whether the "wrapper aro
 ## LinkedIn
 
 **Post:**
-🚀 Just launched CoverCraft AI — a free tool that generates tailored cover letters in 30 seconds.
+🚀 Just launched ApplyFaster — a free tool that generates tailored cover letters in 30 seconds.
 
 The problem: everyone says "customize your cover letter for each job." In practice, that means 45 minutes per application.
 
@@ -102,7 +102,7 @@ Built this because I believe the job search process should be about finding the 
 ## Twitter/X
 
 **Tweet 1 (launch):**
-Just launched CoverCraft AI 🚀
+Just launched ApplyFaster 🚀
 
 Paste your resume + a job description → get a tailored cover letter in 30 seconds.
 

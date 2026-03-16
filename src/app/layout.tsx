@@ -3,22 +3,24 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CoverCraft AI — Tailored Cover Letters in 30 Seconds",
+  title: "ApplyFaster — Land More Interviews with AI Cover Letters",
   description:
-    "Paste your resume and a job description. Get a perfectly tailored, professional cover letter instantly. Land more interviews with AI-powered cover letters.",
+    "Stop spending 45 minutes per application. Paste your resume and a job description, get a perfectly tailored cover letter in 30 seconds. Land more interviews, faster.",
   keywords: [
     "cover letter generator",
     "AI cover letter",
     "job application",
+    "apply faster",
     "resume",
     "cover letter writer",
     "interview",
     "job search",
+    "land more interviews",
   ],
   openGraph: {
-    title: "CoverCraft AI — Tailored Cover Letters in 30 Seconds",
+    title: "ApplyFaster — Land More Interviews with AI Cover Letters",
     description:
-      "Stop wasting hours on cover letters. Paste your resume + job description → get a perfect cover letter instantly.",
+      "Stop spending 45 minutes per application. Get a tailored cover letter in 30 seconds. Land more interviews, faster.",
     type: "website",
   },
 };
