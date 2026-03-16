@@ -8,6 +8,9 @@ export default function Generator() {
   const [resume, setResume] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [tone, setTone] = useState<Tone>("professional");
+  const [whyCompany, setWhyCompany] = useState("");
+  const [whyYou, setWhyYou] = useState("");
+  const [showExtras, setShowExtras] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +43,7 @@ export default function Generator() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, jobDescription, tone }),
+        body: JSON.stringify({ resume, jobDescription, tone, whyCompany, whyYou }),
       });
 
       if (!response.ok) {
@@ -173,6 +176,51 @@ export default function Generator() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Stand out section */}
+            <div>
+              <button
+                onClick={() => setShowExtras(!showExtras)}
+                className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition"
+              >
+                <svg
+                  className={`w-4 h-4 transition-transform ${showExtras ? "rotate-90" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                ⭐ Stand out from the AI pile (optional — but recommended)
+              </button>
+
+              {showExtras && (
+                <div className="mt-3 space-y-3 animate-fade-in">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">
+                      Why this company specifically? What genuinely interests you?
+                    </label>
+                    <textarea
+                      value={whyCompany}
+                      onChange={(e) => setWhyCompany(e.target.value)}
+                      placeholder='e.g. "I&#39;ve used their API for 2 years and love how they prioritize developer experience. Their recent Series B shows they&#39;re scaling fast — I want to be part of that growth."'
+                      className="w-full h-20 px-3 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition resize-none text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">
+                      What makes you different from other candidates for this role?
+                    </label>
+                    <textarea
+                      value={whyYou}
+                      onChange={(e) => setWhyYou(e.target.value)}
+                      placeholder='e.g. "Most backend engineers haven&#39;t run their own SaaS. I built and scaled a side project to 5K users, so I understand the full picture — not just the code, but the product decisions behind it."'
+                      className="w-full h-20 px-3 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition resize-none text-xs"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Error */}

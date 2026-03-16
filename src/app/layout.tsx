@@ -3,9 +3,9 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ApplyFaster — Land More Interviews with AI Cover Letters",
+  title: "ApplyFaster — Cover Letters That Don't Sound Like ChatGPT",
   description:
-    "Stop spending 45 minutes per application. Paste your resume and a job description, get a perfectly tailored cover letter in 30 seconds. Land more interviews, faster.",
+    "Hiring managers are drowning in AI-generated slop. Stand out with cover letters that sound like you — connecting your story to their opportunity. Free to try.",
   keywords: [
     "cover letter generator",
     "AI cover letter",
@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     "land more interviews",
   ],
   openGraph: {
-    title: "ApplyFaster — Land More Interviews with AI Cover Letters",
+    title: "ApplyFaster — Cover Letters That Don't Sound Like ChatGPT",
     description:
-      "Stop spending 45 minutes per application. Get a tailored cover letter in 30 seconds. Land more interviews, faster.",
+      "Hiring managers are drowning in AI slop. Stand out with cover letters that sound like you, not a robot.",
     type: "website",
   },
 };

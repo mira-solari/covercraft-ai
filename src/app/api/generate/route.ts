@@ -29,32 +29,47 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are ApplyFaster, an expert cover letter writer with 20 years of experience in HR and recruiting.
+const SYSTEM_PROMPT = `You are an expert cover letter writer. Your letters get people interviews because they sound genuinely human and answer the two questions every hiring manager asks:
 
-Your job is to write a compelling, tailored cover letter based on the candidate's resume and the job description provided.
+1. "Why is this person right for US?" — What specific value will they bring?
+2. "Why are WE right for this person?" — Why is this a genuine match, not just any job?
 
-RULES:
-1. The cover letter MUST specifically reference details from both the resume AND the job description
-2. Map the candidate's specific experiences and skills to the job requirements
-3. Use concrete examples and achievements from the resume — never invent or fabricate details
-4. Keep it to 3-4 paragraphs, approximately 250-350 words
-5. Start with a compelling hook — NOT "I am writing to apply for..."
-6. End with a confident call to action
-7. Match the requested tone while remaining professional
-8. Do NOT include placeholder brackets like [Company Name] — use the actual company/role name from the job description
-9. Do NOT include a header with addresses/dates — just the letter body
-10. Write as the candidate (first person), not about them
+CRITICAL RULES — SOUND HUMAN, NOT LIKE AI:
+
+NEVER use these AI-slop phrases (instant rejection by hiring managers):
+- "I am writing to express my interest in..."
+- "I am excited to apply for..."
+- "I believe my skills align well with..."
+- "I am passionate about..."
+- "leverage my expertise"
+- "I am confident that..."
+- "thrilled at the opportunity"
+- "unique blend of skills"
+- "proven track record"
+- Any phrase that parrots corporate jargon from the job description verbatim
+
+DO NOT match the company's corporate voice. Real humans don't talk like job descriptions. Write like a smart, articulate person having a conversation — not like a corporate press release.
+
+DO NOT just list keywords from the job description. Instead, tell SPECIFIC STORIES from the resume that demonstrate relevant capability. "I led the migration from monolith to microservices, cutting deploy time from 2 hours to 8 minutes" beats "I have extensive experience in system architecture" every time.
+
+WHAT TO DO:
+- Open with something specific that shows genuine knowledge of the company (a recent product launch, blog post, mission detail — NOT just quoting their job posting)
+- Tell 1-2 concrete stories from the resume that directly answer "what will you do for us?"
+- Show why this company specifically is a real match — why this role is the natural next step for this person
+- Use first-person conversational language. Short sentences are fine. Fragments too, occasionally.
+- Sound like someone who is genuinely good at their job and knows it — confident without being arrogant
+- End with a specific, forward-looking statement about what you'd want to work on
 
 FORMAT:
-- Opening paragraph: Hook + why you're excited about this specific role
-- Middle paragraph(s): Your most relevant experience mapped to their requirements
-- Closing paragraph: Summary of value + call to action
+- 3-4 paragraphs, 250-350 words
+- No header/addresses/dates — just the letter body
+- No placeholder brackets — use actual names from the job description
 
 The output should be ONLY the cover letter text. No explanations, no meta-commentary.`;
 
 export async function POST(request: NextRequest) {
   try {
-    const { resume, jobDescription, tone } = await request.json();
+    const { resume, jobDescription, tone, whyCompany, whyYou } = await request.json();
 
     // Validation
     if (!resume || !jobDescription) {
@@ -96,15 +111,26 @@ export async function POST(request: NextRequest) {
         "Write in a friendly, approachable tone. Professional but warm, like talking to a respected colleague.",
     };
 
-    const userPrompt = `TONE: ${toneInstructions[tone] || toneInstructions.professional}
+    let userPrompt = `TONE: ${toneInstructions[tone] || toneInstructions.professional}
 
 CANDIDATE'S RESUME:
 ${resume}
 
 JOB DESCRIPTION:
-${jobDescription}
+${jobDescription}`;
 
-Write the cover letter now.`;
+    if (whyCompany?.trim()) {
+      userPrompt += `\n\nWHY THIS COMPANY (in the candidate's own words):
+${whyCompany.trim()}`;
+    }
+
+    if (whyYou?.trim()) {
+      userPrompt += `\n\nWHAT MAKES THIS CANDIDATE DIFFERENT (in their own words):
+${whyYou.trim()}`;
+    }
+
+    userPrompt += `\n\nWrite the cover letter now. Remember: sound human, tell specific stories, answer "why them for us" and "why us for them."`;
+
 
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(

@@ -12,20 +12,21 @@ export default function Hero({ onGetStarted }: HeroProps) {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-8">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
           <span className="text-sm text-indigo-300">
-            AI-powered — 30 seconds per application
+            Sounds human — because hiring managers can tell when it doesn&apos;t
           </span>
         </div>
 
         {/* Headline */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-          Apply faster.{" "}
-          <span className="gradient-text">Land more interviews.</span>
+          Cover letters that don&apos;t
+          <br />
+          <span className="gradient-text">sound like ChatGPT.</span>
         </h1>
 
         <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-10">
-          Stop spending 45 minutes per application. Paste your resume and a job
-          description — get a tailored cover letter that gets you noticed, in
-          seconds.
+          Hiring managers are drowning in AI-generated slop. Stand out with cover
+          letters that sound like you — connecting the dots between your story and
+          their opportunity.
         </p>
 
         {/* CTA */}
