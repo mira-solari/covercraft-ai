@@ -13,10 +13,10 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-gray-300 transition">
+            <a href="/privacy" className="hover:text-gray-300 transition">
               Privacy
             </a>
-            <a href="#" className="hover:text-gray-300 transition">
+            <a href="/terms" className="hover:text-gray-300 transition">
               Terms
             </a>
             <a href="mailto:support@applyfaster.ai" className="hover:text-gray-300 transition">
