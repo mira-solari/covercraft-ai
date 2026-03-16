@@ -60,11 +60,11 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative p-6 rounded-2xl border transition ${
+              className={`relative p-6 rounded-2xl border transition flex flex-col ${
                 plan.highlight
                   ? "bg-indigo-600/10 border-indigo-500/40 scale-[1.02]"
                   : "bg-[var(--surface)] border-[var(--border)] hover:border-indigo-500/20"
@@ -78,19 +78,19 @@ export default function Pricing() {
 
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <p className="text-sm text-gray-500">{plan.desc}</p>
+                <p className="text-sm text-gray-400">{plan.desc}</p>
               </div>
 
               <div className="mb-6">
                 <span className="text-4xl font-bold">{plan.price}</span>
                 {plan.period && (
-                  <span className="text-gray-500 text-sm ml-1">
+                  <span className="text-gray-400 text-sm ml-1">
                     {plan.period}
                   </span>
                 )}
               </div>
 
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-1">
                 {plan.features.map((f) => (
                   <li
                     key={f}
@@ -115,10 +115,10 @@ export default function Pricing() {
               </ul>
 
               <button
-                className={`w-full py-2.5 rounded-xl font-medium transition ${
+                className={`w-full py-2.5 rounded-xl font-medium transition mt-auto ${
                   plan.highlight
                     ? "bg-indigo-600 hover:bg-indigo-500 text-white"
-                    : "bg-[var(--surface-hover)] hover:bg-indigo-600/20 text-gray-300 border border-[var(--border)]"
+                    : "bg-[var(--surface-hover)] hover:bg-indigo-600/20 text-gray-200 border border-[var(--border)] hover:border-indigo-500/30"
                 }`}
               >
                 {plan.cta}
@@ -127,7 +127,7 @@ export default function Pricing() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-gray-600 mt-8">
+        <p className="text-center text-xs text-gray-500 mt-8">
           💳 Payments powered by Stripe · Secure checkout · Cancel anytime
         </p>
       </div>

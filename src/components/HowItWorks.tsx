@@ -62,7 +62,7 @@ export default function HowItWorks() {
         <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
             { val: "30s", label: "Average generation time" },
-            { val: "3x", label: "More interview callbacks" },
+            { val: "0", label: "Generic templates used" },
             { val: "100%", label: "Tailored to each job" },
             { val: "Free", label: "First letter, no signup" },
           ].map((stat) => (
