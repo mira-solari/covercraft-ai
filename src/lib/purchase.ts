@@ -1,4 +1,4 @@
-import { createHmac, randomBytes } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 // ---------------------------------------------------------------------------
 // Purchase token utilities
@@ -16,10 +16,16 @@ export const COOKIE_NAME = "af_purchase";
 // Free-tier cookie: unsigned, just tracks generation count
 export const FREE_COOKIE_NAME = "af_free";
 
-const SIGNING_KEY =
-  process.env.PURCHASE_SIGNING_KEY ||
-  process.env.STRIPE_SECRET_KEY ||
-  "applyfaster-fallback-key";
+function getSigningKey(): string {
+  const key = process.env.PURCHASE_SIGNING_KEY || process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error(
+      "PURCHASE_SIGNING_KEY or STRIPE_SECRET_KEY must be set — " +
+        "never use a hardcoded fallback for cryptographic signing"
+    );
+  }
+  return key;
+}
 
 export type PlanType = "free" | "single" | "pro";
 
@@ -46,7 +52,7 @@ export interface PurchasePayload {
 // ---------------------------------------------------------------------------
 
 function sign(payload: string): string {
-  return createHmac("sha256", SIGNING_KEY).update(payload).digest("hex");
+  return createHmac("sha256", getSigningKey()).update(payload).digest("hex");
 }
 
 export function createPurchaseCookie(payload: PurchasePayload): string {
@@ -63,7 +69,12 @@ export function parsePurchaseCookie(
   try {
     const [b64, sig] = cookieValue.split(".");
     if (!b64 || !sig) return null;
-    if (sign(b64) !== sig) {
+    const expected = Buffer.from(sign(b64), "utf-8");
+    const actual = Buffer.from(sig, "utf-8");
+    if (
+      expected.length !== actual.length ||
+      !timingSafeEqual(expected, actual)
+    ) {
       console.warn("Purchase cookie signature mismatch — possible tampering");
       return null;
     }

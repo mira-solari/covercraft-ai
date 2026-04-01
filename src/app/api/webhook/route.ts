@@ -58,19 +58,12 @@ export async function POST(request: NextRequest) {
       );
     }
   } else {
-    // In development without webhook secret, parse the event directly
-    // WARNING: This should never happen in production
-    console.warn(
-      "STRIPE_WEBHOOK_SECRET not set — accepting unverified webhook"
+    // Webhook secret is required — never process unverified events
+    console.error("STRIPE_WEBHOOK_SECRET not set — rejecting webhook");
+    return NextResponse.json(
+      { error: "Webhook secret not configured" },
+      { status: 500 }
     );
-    try {
-      event = JSON.parse(body) as Stripe.Event;
-    } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
   }
 
   // Handle the event
