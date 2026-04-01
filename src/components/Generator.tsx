@@ -4,7 +4,23 @@ import { useState, useCallback } from "react";
 
 type Tone = "professional" | "enthusiastic" | "conversational";
 
-export default function Generator() {
+interface PlanStatus {
+  plan: "free" | "single" | "pro";
+  generationsUsed: number;
+  generationsAllowed: number;
+  active: boolean;
+  expired?: boolean;
+}
+
+interface GeneratorProps {
+  planStatus: PlanStatus | null;
+  onPlanStatusChange: () => void;
+}
+
+export default function Generator({
+  planStatus,
+  onPlanStatusChange,
+}: GeneratorProps) {
   const [resume, setResume] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [tone, setTone] = useState<Tone>("professional");
@@ -18,6 +34,7 @@ export default function Generator() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [generationCount, setGenerationCount] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
 
   const handleFileUpload = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -59,6 +76,7 @@ export default function Generator() {
     }
 
     setError("");
+    setLimitReached(false);
     setIsGenerating(true);
     setCoverLetter("");
 
@@ -66,11 +84,20 @@ export default function Generator() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, jobDescription, tone, whyCompany, whyYou }),
+        body: JSON.stringify({
+          resume,
+          jobDescription,
+          tone,
+          whyCompany,
+          whyYou,
+        }),
       });
 
       if (!response.ok) {
         const data = await response.json();
+        if (data.limitReached) {
+          setLimitReached(true);
+        }
         throw new Error(data.error || "Failed to generate cover letter");
       }
 
@@ -90,12 +117,15 @@ export default function Generator() {
       }
 
       setGenerationCount((prev) => prev + 1);
+
+      // Refresh plan status after successful generation (usage count changed)
+      onPlanStatusChange();
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsGenerating(false);
     }
-  }, [resume, jobDescription, tone]);
+  }, [resume, jobDescription, tone, whyCompany, whyYou, onPlanStatusChange]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(coverLetter);
@@ -131,6 +161,34 @@ export default function Generator() {
     },
   ];
 
+  // Compute display info from plan status
+  const plan = planStatus?.plan ?? "free";
+  const isActive = planStatus?.active ?? true;
+  const remaining =
+    plan === "pro"
+      ? Infinity
+      : (planStatus?.generationsAllowed ?? 1) -
+        (planStatus?.generationsUsed ?? 0);
+
+  // Button label logic
+  const getButtonLabel = () => {
+    if (isGenerating) return null; // Handled separately with spinner
+    if (limitReached || (!isActive && generationCount > 0)) {
+      return "Upgrade to Continue";
+    }
+    if (generationCount > 0) {
+      return "Regenerate Cover Letter";
+    }
+    if (plan === "free") return "Generate Cover Letter — Free";
+    if (plan === "single") return "Generate Cover Letter";
+    if (plan === "pro") return "Generate Cover Letter";
+    return "Generate Cover Letter";
+  };
+
+  const scrollToPricing = () => {
+    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <section id="generator" className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
@@ -143,6 +201,36 @@ export default function Generator() {
           </p>
         </div>
 
+        {/* Plan status badge */}
+        {planStatus && plan !== "free" && isActive && (
+          <div className="flex justify-center mb-6">
+            <div
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
+                plan === "pro"
+                  ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30"
+                  : "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+              }`}
+            >
+              {plan === "pro" ? (
+                <>
+                  <span>Pro Plan Active</span>
+                  <span className="text-xs opacity-75">
+                    — Unlimited letters
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>Single Plan</span>
+                  <span className="text-xs opacity-75">
+                    — {remaining} generation{remaining !== 1 ? "s" : ""}{" "}
+                    remaining
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Input Column */}
           <div className="space-y-4">
@@ -150,7 +238,7 @@ export default function Generator() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-300">
-                  📄 Your Resume / Experience
+                  Your Resume / Experience
                 </label>
                 <label className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg transition text-gray-400 hover:text-white cursor-pointer">
                   <input
@@ -163,20 +251,33 @@ export default function Generator() {
                       e.target.value = "";
                     }}
                   />
-                  {isUploading ? "Parsing..." : "📎 Upload PDF"}
+                  {isUploading ? "Parsing..." : "Upload PDF"}
                 </label>
               </div>
               {uploadedFileName && (
                 <div className="text-xs text-green-400 mb-1 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   Loaded from {uploadedFileName}
                 </div>
               )}
               <textarea
                 value={resume}
-                onChange={(e) => { setResume(e.target.value); setUploadedFileName(""); }}
+                onChange={(e) => {
+                  setResume(e.target.value);
+                  setUploadedFileName("");
+                }}
                 placeholder="Paste your resume text here, or upload a PDF above. Include your work experience, skills, education, and achievements."
                 className="w-full h-48 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition resize-none text-sm"
               />
@@ -188,7 +289,7 @@ export default function Generator() {
             {/* Job Description Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                💼 Job Description
+                Job Description
               </label>
               <textarea
                 value={jobDescription}
@@ -205,7 +306,7 @@ export default function Generator() {
             {/* Tone Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                🎨 Tone
+                Tone
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {tones.map((t) => (
@@ -236,16 +337,22 @@ export default function Generator() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
-                ⭐ Stand out from the AI pile (optional — but recommended)
+                Stand out from the AI pile (optional — but recommended)
               </button>
 
               {showExtras && (
                 <div className="mt-3 space-y-3 animate-fade-in">
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Why this company specifically? What genuinely interests you?
+                      Why this company specifically? What genuinely interests
+                      you?
                     </label>
                     <textarea
                       value={whyCompany}
@@ -256,7 +363,8 @@ export default function Generator() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">
-                      What makes you different from other candidates for this role?
+                      What makes you different from other candidates for this
+                      role?
                     </label>
                     <textarea
                       value={whyYou}
@@ -273,17 +381,31 @@ export default function Generator() {
             {error && (
               <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm animate-fade-in">
                 {error}
+                {limitReached && (
+                  <button
+                    onClick={scrollToPricing}
+                    className="block mt-2 text-indigo-400 hover:text-indigo-300 underline text-sm font-medium"
+                  >
+                    View pricing plans
+                  </button>
+                )}
               </div>
             )}
 
             {/* Generate Button */}
             <button
-              onClick={handleGenerate}
+              onClick={
+                limitReached || (!isActive && generationCount > 0)
+                  ? scrollToPricing
+                  : handleGenerate
+              }
               disabled={isGenerating}
               className={`w-full py-3.5 rounded-xl font-semibold text-white transition text-lg ${
                 isGenerating
                   ? "bg-indigo-700 cursor-wait"
-                  : "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]"
+                  : limitReached || (!isActive && generationCount > 0)
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 active:scale-[0.98]"
+                    : "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98]"
               }`}
             >
               {isGenerating ? (
@@ -309,19 +431,28 @@ export default function Generator() {
                   </svg>
                   Crafting your letter...
                 </span>
-              ) : generationCount > 0 ? (
-                "✨ Regenerate Cover Letter"
               ) : (
-                "✨ Generate Cover Letter — Free"
+                getButtonLabel()
               )}
             </button>
+
+            {/* Remaining generations hint */}
+            {plan === "single" &&
+              isActive &&
+              remaining < 4 &&
+              remaining > 0 && (
+                <p className="text-center text-xs text-gray-500">
+                  {remaining} regeneration{remaining !== 1 ? "s" : ""} remaining
+                  on your Single plan
+                </p>
+              )}
           </div>
 
           {/* Output Column */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-300">
-                ✉️ Your Cover Letter
+                Your Cover Letter
               </label>
               {coverLetter && (
                 <div className="flex gap-2">
@@ -329,13 +460,13 @@ export default function Generator() {
                     onClick={handleCopy}
                     className="px-3 py-1.5 text-xs font-medium bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg transition text-gray-400 hover:text-white"
                   >
-                    {copied ? "✓ Copied!" : "📋 Copy"}
+                    {copied ? "Copied!" : "Copy"}
                   </button>
                   <button
                     onClick={handleDownload}
                     className="px-3 py-1.5 text-xs font-medium bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg transition text-gray-400 hover:text-white"
                   >
-                    ⬇ Download
+                    Download
                   </button>
                 </div>
               )}
@@ -360,7 +491,7 @@ export default function Generator() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="text-4xl mb-3">✉️</div>
+                  <div className="text-4xl mb-3">&#9993;&#65039;</div>
                   <p className="text-gray-500">
                     Your tailored cover letter will appear here
                   </p>
@@ -387,7 +518,7 @@ export default function Generator() {
                   />
                 </svg>
                 <span>
-                  Tailored to match the job requirements •{" "}
+                  Tailored to match the job requirements &bull;{" "}
                   {coverLetter.split(/\s+/).length} words
                 </span>
               </div>

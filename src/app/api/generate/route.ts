@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import {
+  getPurchaseFromRequest,
+  getFreeCountFromRequest,
+  isPurchaseValid,
+  purchaseCookieHeader,
+  freeCountCookieHeader,
+  type PurchasePayload,
+} from "@/lib/purchase";
 
 function getGroqClient() {
   return new Groq({
@@ -8,12 +16,12 @@ function getGroqClient() {
 }
 
 // Simple in-memory rate limiting (per IP, resets on deploy)
+// Kept as a safety net against abuse even for paid users
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-function checkRateLimit(ip: string): boolean {
+function checkRateLimit(ip: string, maxRequests: number): boolean {
   const now = Date.now();
   const windowMs = 60 * 60 * 1000; // 1 hour
-  const maxRequests = 5; // 5 per hour for free tier
 
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
@@ -69,7 +77,8 @@ The output should be ONLY the cover letter text. No explanations, no meta-commen
 
 export async function POST(request: NextRequest) {
   try {
-    const { resume, jobDescription, tone, whyCompany, whyYou } = await request.json();
+    const { resume, jobDescription, tone, whyCompany, whyYou } =
+      await request.json();
 
     // Validation
     if (!resume || !jobDescription) {
@@ -81,26 +90,92 @@ export async function POST(request: NextRequest) {
 
     if (resume.length > 10000 || jobDescription.length > 10000) {
       return NextResponse.json(
-        { error: "Input too long. Please keep each field under 10,000 characters." },
+        {
+          error:
+            "Input too long. Please keep each field under 10,000 characters.",
+        },
         { status: 400 }
       );
     }
 
-    // Rate limiting
+    // -----------------------------------------------------------------------
+    // Usage gating: check purchase cookie
+    // -----------------------------------------------------------------------
+    const cookieHeader = request.headers.get("cookie");
+    const purchase = getPurchaseFromRequest(cookieHeader);
+    const freeCount = getFreeCountFromRequest(cookieHeader);
+
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0] ||
       request.headers.get("x-real-ip") ||
       "unknown";
 
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json(
-        {
-          error:
-            "Rate limit exceeded. Upgrade to Pro for unlimited cover letters!",
-        },
-        { status: 429 }
-      );
+    // Determine what tier the user is on and whether they can generate
+    let updatedPurchase: PurchasePayload | null = null;
+    let setCookieHeaders: string[] = [];
+
+    if (purchase && isPurchaseValid(purchase)) {
+      // Paid user — check their specific limits
+      if (purchase.plan === "single") {
+        const used = purchase.generationsUsed ?? 0;
+        const allowed = purchase.generationsAllowed ?? 4;
+        if (used >= allowed) {
+          return NextResponse.json(
+            {
+              error: `You've used all ${allowed} generations on your Single plan. Upgrade to Pro for unlimited letters!`,
+              limitReached: true,
+              plan: "single",
+            },
+            { status: 403 }
+          );
+        }
+        // Increment usage — will be set in cookie after generation
+        updatedPurchase = {
+          ...purchase,
+          generationsUsed: used + 1,
+        };
+      } else if (purchase.plan === "pro") {
+        // Pro has no generation limit, but apply a high rate limit as abuse protection
+        if (!checkRateLimit(ip, 60)) {
+          return NextResponse.json(
+            { error: "Too many requests. Please wait a moment and try again." },
+            { status: 429 }
+          );
+        }
+        updatedPurchase = purchase; // No changes needed
+      }
+    } else {
+      // Free tier — allow 1 generation total (tracked via cookie)
+      if (freeCount >= 1) {
+        return NextResponse.json(
+          {
+            error:
+              "You've used your free cover letter. Upgrade to continue generating!",
+            limitReached: true,
+            plan: "free",
+          },
+          { status: 403 }
+        );
+      }
+
+      // Also apply IP-based rate limiting as a safety net
+      if (!checkRateLimit(ip, 5)) {
+        return NextResponse.json(
+          {
+            error:
+              "Rate limit exceeded. Upgrade to Pro for unlimited cover letters!",
+          },
+          { status: 429 }
+        );
+      }
+
+      // Will increment free count after generation
+      setCookieHeaders.push(freeCountCookieHeader(freeCount + 1));
     }
+
+    // -----------------------------------------------------------------------
+    // Generate the cover letter
+    // -----------------------------------------------------------------------
 
     const toneInstructions: Record<string, string> = {
       professional:
@@ -131,7 +206,6 @@ ${whyYou.trim()}`;
 
     userPrompt += `\n\nWrite the cover letter now. Remember: sound human, tell specific stories, answer "why them for us" and "why us for them."`;
 
-
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
         { error: "Service temporarily unavailable. Please try again later." },
@@ -153,6 +227,13 @@ ${whyYou.trim()}`;
       stream: true,
     });
 
+    // If we need to update the purchase cookie (e.g., increment single usage),
+    // add it to the response headers
+    if (updatedPurchase) {
+      const maxAge = updatedPurchase.plan === "pro" ? 35 : 365;
+      setCookieHeaders.push(purchaseCookieHeader(updatedPurchase, maxAge));
+    }
+
     // Create a readable stream
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
@@ -171,13 +252,18 @@ ${whyYou.trim()}`;
       },
     });
 
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache",
-        "Transfer-Encoding": "chunked",
-      },
+    const headers = new Headers({
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "Transfer-Encoding": "chunked",
     });
+
+    // Set all cookies
+    for (const cookie of setCookieHeaders) {
+      headers.append("Set-Cookie", cookie);
+    }
+
+    return new Response(readable, { headers });
   } catch (error: any) {
     console.error("Generation error:", error);
     return NextResponse.json(
