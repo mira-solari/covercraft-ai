@@ -223,7 +223,7 @@ ${whyYou.trim()}`;
       ],
       model: "llama-3.3-70b-versatile",
       temperature: 0.7,
-      max_tokens: 1024,
+      max_tokens: 2048,
       stream: true,
     });
 
