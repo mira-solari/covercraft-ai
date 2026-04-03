@@ -37,6 +37,12 @@ export default function Header({ onGetStarted }: HeaderProps) {
             >
               FAQ
             </a>
+            <a
+              href="/blog"
+              className="text-sm text-gray-400 hover:text-white transition"
+            >
+              Blog
+            </a>
           </nav>
 
           <button

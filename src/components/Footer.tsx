@@ -19,6 +19,9 @@ export default function Footer() {
             <a href="/terms" className="hover:text-gray-300 transition">
               Terms
             </a>
+            <a href="/blog" className="hover:text-gray-300 transition">
+              Blog
+            </a>
             <a href="mailto:support@applyfaster.ai" className="hover:text-gray-300 transition">
               Contact
             </a>
