@@ -147,17 +147,17 @@ export default function Generator({
     {
       value: "professional",
       label: "Professional",
-      desc: "Formal and polished",
+      desc: "Formal and polished — best for corporate roles",
     },
     {
       value: "enthusiastic",
       label: "Enthusiastic",
-      desc: "Energetic and passionate",
+      desc: "Energetic and passionate — great for startups",
     },
     {
       value: "conversational",
       label: "Conversational",
-      desc: "Friendly and approachable",
+      desc: "Friendly and natural — ideal for creative roles",
     },
   ];
 
@@ -313,13 +313,22 @@ export default function Generator({
                   <button
                     key={t.value}
                     onClick={() => setTone(t.value)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium transition flex flex-col items-center gap-0.5 ${
                       tone === t.value
                         ? "bg-indigo-600 text-white"
                         : "bg-[var(--surface)] text-gray-400 hover:text-white border border-[var(--border)] hover:border-indigo-500/50"
                     }`}
                   >
-                    {t.label}
+                    <span>{t.label}</span>
+                    <span
+                      className={`text-[10px] font-normal leading-tight ${
+                        tone === t.value
+                          ? "text-indigo-200"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {t.desc}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -392,6 +401,14 @@ export default function Generator({
               </div>
             )}
 
+            {/* Paywall explanation */}
+            {(limitReached || (!isActive && generationCount > 0)) && (
+              <div className="px-4 py-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-center text-sm text-indigo-300 animate-fade-in">
+                ✨ You&apos;ve used your free cover letter! Upgrade for unlimited
+                access.
+              </div>
+            )}
+
             {/* Generate Button */}
             <button
               onClick={
@@ -429,7 +446,7 @@ export default function Generator({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Crafting your letter...
+                  Generating...
                 </span>
               ) : (
                 getButtonLabel()
