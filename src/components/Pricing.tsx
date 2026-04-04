@@ -55,10 +55,10 @@ export default function Pricing() {
       desc: "For active job seekers",
       features: [
         "Unlimited cover letters",
+        "Resume tailoring (NEW)",
         "All tones + custom instructions",
         "Priority generation speed",
         "Email support",
-        "Resume optimization tips",
       ],
       cta: "Go Pro",
       plan: "pro",
