@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import { getPostBySlug, getAllSlugs } from "@/lib/blog";
+import { getPostBySlug, getAllSlugs, getAllPosts } from "@/lib/blog";
 import { mdxComponents } from "@/components/MdxComponents";
 
 interface PageProps {
@@ -24,13 +24,23 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${post.title} — ApplyFaster`,
+    title: post.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
+      url: `https://applyfaster.ai/blog/${slug}`,
+      siteName: "ApplyFaster",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+    },
+    alternates: {
+      canonical: `https://applyfaster.ai/blog/${slug}`,
     },
   };
 }
@@ -83,6 +93,37 @@ export default async function BlogPostPage({ params }: PageProps) {
           </div>
         </article>
 
+        {/* Related Posts */}
+        {(() => {
+          const allPosts = getAllPosts();
+          const related = allPosts
+            .filter((p) => p.slug !== slug)
+            .slice(0, 3);
+          if (related.length === 0) return null;
+          return (
+            <div className="mt-14">
+              <h2 className="text-xl font-bold mb-6">Keep Reading</h2>
+              <div className="space-y-4">
+                {related.map((relPost) => (
+                  <Link
+                    key={relPost.slug}
+                    href={`/blog/${relPost.slug}`}
+                    className="block p-4 border border-[var(--border)] rounded-xl hover:border-indigo-500/50 transition"
+                  >
+                    <p className="font-medium text-sm hover:text-indigo-400 transition">
+                      {relPost.title}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {relPost.excerpt.slice(0, 120)}
+                      {relPost.excerpt.length > 120 ? "..." : ""}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* CTA */}
         <div className="mt-14 p-6 bg-indigo-600/10 border border-indigo-500/30 rounded-xl">
           <p className="text-lg font-semibold mb-2">
@@ -100,6 +141,34 @@ export default async function BlogPostPage({ params }: PageProps) {
           </Link>
         </div>
       </div>
+
+      {/* Article structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: post.title,
+            description: post.excerpt,
+            datePublished: post.date,
+            author: {
+              "@type": "Organization",
+              name: "ApplyFaster",
+              url: "https://applyfaster.ai",
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "ApplyFaster",
+              url: "https://applyfaster.ai",
+            },
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": `https://applyfaster.ai/blog/${slug}`,
+            },
+          }),
+        }}
+      />
     </main>
   );
 }

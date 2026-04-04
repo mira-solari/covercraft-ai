@@ -3,14 +3,18 @@ import type { Metadata } from "next";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: "Blog — ApplyFaster",
+  title: "Cover Letter Tips & Job Application Advice",
   description:
-    "Tips on cover letters, job applications, and standing out in a world of AI-generated slop.",
+    "Expert cover letter tips, job application strategies, and advice for standing out in a world of AI-generated slop. Learn how to write cover letters that actually get read.",
   openGraph: {
-    title: "Blog — ApplyFaster",
+    title: "Cover Letter Tips & Job Application Advice — ApplyFaster Blog",
     description:
-      "Tips on cover letters, job applications, and standing out in a world of AI-generated slop.",
+      "Expert cover letter tips and job search strategies. Learn to write letters that hiring managers actually want to read.",
     type: "website",
+    url: "https://applyfaster.ai/blog",
+  },
+  alternates: {
+    canonical: "https://applyfaster.ai/blog",
   },
 };
 

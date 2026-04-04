@@ -8,6 +8,7 @@ import HowItWorks from "@/components/HowItWorks";
 import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import HomeSchema from "@/components/HomeSchema";
 
 interface PlanStatus {
   plan: "free" | "single" | "pro";
@@ -152,6 +153,7 @@ export default function Home() {
       <Pricing />
       <FAQ />
       <Footer />
+      <HomeSchema />
     </main>
   );
 }
