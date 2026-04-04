@@ -37,43 +37,373 @@ function checkRateLimit(ip: string, maxRequests: number): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are an expert cover letter writer. Your letters get people interviews because they sound genuinely human and answer the two questions every hiring manager asks:
+// ---------------------------------------------------------------------------
+// Banned phrases — post-processing to catch what the model ignores
+// ---------------------------------------------------------------------------
 
-1. "Why is this person right for US?" — What specific value will they bring?
-2. "Why are WE right for this person?" — Why is this a genuine match, not just any job?
+const BANNED_PHRASES: readonly string[] = [
+  "i'm excited",
+  "i am excited",
+  "i'm confident",
+  "i am confident",
+  "i'm eager",
+  "i am eager",
+  "i'm thrilled",
+  "i am thrilled",
+  "i'm impressed",
+  "i am impressed",
+  "i'm passionate",
+  "i am passionate",
+  "i believe my skills",
+  "leverage my expertise",
+  "unique blend",
+  "proven track record",
+  "push the boundaries",
+  "pushing the boundaries",
+  "meaningful impact",
+  "significant impact",
+  "looking forward to the opportunity to discuss",
+  "looking forward to discussing",
+  "i'm looking forward to",
+  "i am looking forward to",
+  "i'd love the opportunity",
+  "resonate with me",
+  "resonates with me",
+  "align well with",
+  "aligns well with",
+  "great fit for this role",
+  "strong fit for this role",
+  "strong candidate for this role",
+] as const;
 
-CRITICAL RULES — SOUND HUMAN, NOT LIKE AI:
+/**
+ * Rewrites banned AI-slop phrases with natural alternatives.
+ * Falls back to removal when no clean rewrite is possible.
+ */
+function rewriteBannedPhrases(text: string): {
+  cleaned: string;
+  rewriteCount: number;
+} {
+  let cleaned = text;
+  let rewriteCount = 0;
 
-NEVER use these AI-slop phrases (instant rejection by hiring managers):
-- "I am writing to express my interest in..."
-- "I am excited to apply for..."
-- "I believe my skills align well with..."
-- "I am passionate about..."
+  // Map of patterns to their replacements.
+  // null means remove the entire sentence containing the phrase.
+  const rewrites: Array<{ pattern: RegExp; replacement: string | null }> = [
+    // "I'm excited to [verb]" -> "I [verb]" (preserve the action) — must run BEFORE the broader pattern
+    {
+      pattern: /I(?:'m|'m| am) excited to /gi,
+      replacement: "I ",
+    },
+    // "I'm excited about/by/for the prospect/opportunity of X" -> strip preamble
+    {
+      pattern:
+        /I(?:'m|'m| am) excited (?:about |by |for )?(?:the (?:prospect|opportunity) (?:of |to ))?/gi,
+      replacement: "",
+    },
+    // "I'm confident that X" -> just "X"
+    {
+      pattern: /I(?:'m|'m| am) confident (?:that |in )?/gi,
+      replacement: "",
+    },
+    // "I'm eager to X" -> "I want to X"
+    {
+      pattern: /I(?:'m|'m| am) eager to/gi,
+      replacement: "I want to",
+    },
+    // "I'm thrilled at/by the opportunity" -> remove
+    {
+      pattern: /I(?:'m|'m| am) thrilled (?:at|by|about) (?:the opportunity )?/gi,
+      replacement: "",
+    },
+    // "I'm impressed by X" -> "X stands out" or remove
+    {
+      pattern: /I(?:'m|'m| am) impressed (?:by|with) /gi,
+      replacement: "",
+    },
+    // "I'm passionate about" -> remove
+    {
+      pattern: /I(?:'m|'m| am) passionate about /gi,
+      replacement: "",
+    },
+    // "I believe my skills" -> "My skills"
+    {
+      pattern: /I believe (?:that )?my/gi,
+      replacement: "My",
+    },
+    // "leverage my expertise" -> "apply what I know"
+    {
+      pattern: /leverage my expertise/gi,
+      replacement: "apply what I know",
+    },
+    // "unique blend" -> "combination"
+    { pattern: /unique blend/gi, replacement: "combination" },
+    // "proven track record" -> "track record"
+    { pattern: /proven track record/gi, replacement: "track record" },
+    // "push(ing) the boundaries (of what's possible in X)" -> remove whole clause
+    // Also catch "that is pushing..." and "is pushing..."
+    {
+      pattern:
+        /(?:that is |is )?push(?:ing)? the boundaries(?: of (?:what(?:'s|'s| is) possible(?: in)?)?[^,.]*)?\.?\s?/gi,
+      replacement: "",
+    },
+    // "meaningful/significant impact" -> "a difference"
+    {
+      pattern: /(?:meaningful|significant) impact/gi,
+      replacement: "a difference",
+    },
+    // Full filler closings — remove the whole sentence including leading context
+    {
+      pattern:
+        /[^.]*I(?:'m|'m| am) looking forward to [^.]*\.\s?/gi,
+      replacement: "",
+    },
+    // "resonate(s) with me" -> "matters to me"
+    {
+      pattern: /resonates? with me/gi,
+      replacement: "matters to me",
+    },
+    // "align(s) well with" -> "match(es)"
+    { pattern: /aligns? well with/gi, replacement: "matches" },
+    // "... make(s) me a great/strong fit/candidate for [role/company]" -> remove whole sentence
+    {
+      pattern:
+        /[^.]*(?:make(?:s)? me a |(?:a |am a ))(?:great|strong) (?:fit|candidate) for [^.]*\.\s?/gi,
+      replacement: "",
+    },
+    // "I'd love the opportunity" -> "I'd like"
+    {
+      pattern: /I(?:'d|'d| would) love the opportunity to/gi,
+      replacement: "I'd like to",
+    },
+  ];
+
+  for (const { pattern, replacement } of rewrites) {
+    const before = cleaned;
+    if (replacement === null) {
+      // Remove entire sentences containing the pattern
+      cleaned = cleaned.replace(
+        new RegExp(`[^.]*${pattern.source}[^.]*\\.\\s*`, pattern.flags),
+        ""
+      );
+    } else {
+      cleaned = cleaned.replace(pattern, replacement);
+    }
+    if (cleaned !== before) rewriteCount++;
+  }
+
+  // Clean up artifacts from phrase removal
+  cleaned = cleaned
+    // Ensure space after period (sentence removals can leave ".NextSentence")
+    .replace(/\.([A-Z])/g, ". $1")
+    // Remove sentences that became empty or near-empty after rewriting
+    // (e.g., "my skills ." after both rewrites strip the sentence)
+    .replace(/(?:^|\.\s+)[A-Za-z]{0,3}\s*\./g, ".")
+    // Remove orphaned sentence fragments (just punctuation or 1-2 words)
+    .replace(/\.\s*\./g, ".")
+    // "to make a a difference" -> "to make a difference"
+    .replace(/\ba a\b/g, "a")
+    // Double spaces
+    .replace(/ {2,}/g, " ")
+    // Capitalize after period if removal left lowercase start
+    .replace(/\.\s+([a-z])/g, (_match, letter: string) => `. ${letter.toUpperCase()}`)
+    // Remove leading "and" or "to" at start of sentence after phrase removal
+    .replace(/\.\s+(?:And|To)\s+/g, ". ")
+    // Leading spaces on lines
+    .replace(/^\s+/gm, "")
+    // Collapse multiple blank lines
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return { cleaned, rewriteCount };
+}
+
+/**
+ * Counts remaining banned phrases after rewriting (for logging).
+ */
+function countRemainingBanned(text: string): string[] {
+  const lower = text.toLowerCase();
+  return BANNED_PHRASES.filter((phrase) => lower.includes(phrase));
+}
+
+// ---------------------------------------------------------------------------
+// Seniority detection — adjusts prompt voice based on career level
+// ---------------------------------------------------------------------------
+
+type SeniorityLevel = "junior" | "mid" | "senior" | "executive";
+
+function detectSeniority(resume: string): {
+  level: SeniorityLevel;
+  yearsEstimate: number;
+} {
+  const lower = resume.toLowerCase();
+
+  // Check for executive-level signals
+  const executiveTitles =
+    /\b(cto|cfo|ceo|coo|cio|cmo|vp |vice president|svp |evp |chief |head of engineering|head of product|head of design|managing director|partner at|general manager)\b/i;
+  const isExecutive = executiveTitles.test(resume);
+
+  // Check for senior-level signals
+  const seniorTitles =
+    /\b(senior|sr\.|staff|principal|lead|architect|director|manager|team lead)\b/i;
+  const isSeniorTitle = seniorTitles.test(resume);
+
+  // Estimate years of experience from date ranges
+  const yearMatches = resume.match(/20\d{2}|19\d{2}/g);
+  let yearsEstimate = 0;
+  if (yearMatches && yearMatches.length >= 2) {
+    const years = yearMatches.map(Number).sort((a, b) => a - b);
+    const currentYear = new Date().getFullYear();
+    const earliest = years[0];
+    yearsEstimate = currentYear - earliest;
+  }
+
+  // Count distinct company/role entries as a proxy
+  const roleIndicators = (
+    lower.match(/\b(at|@)\s+\w+/g) || []
+  ).length;
+
+  // Count management signals
+  const managementSignals = (
+    lower.match(
+      /\b(led|managed|directed|oversaw|grew|scaled|built a team|hired|mentored|org of|reports)\b/g
+    ) || []
+  ).length;
+
+  if (isExecutive || (yearsEstimate >= 12 && managementSignals >= 3)) {
+    return { level: "executive", yearsEstimate };
+  }
+
+  if (
+    isSeniorTitle ||
+    yearsEstimate >= 7 ||
+    (roleIndicators >= 3 && managementSignals >= 2)
+  ) {
+    return { level: "senior", yearsEstimate };
+  }
+
+  if (yearsEstimate >= 3 || roleIndicators >= 2) {
+    return { level: "mid", yearsEstimate };
+  }
+
+  return { level: "junior", yearsEstimate };
+}
+
+// ---------------------------------------------------------------------------
+// System prompt — rewritten with few-shot examples and structural variety
+// ---------------------------------------------------------------------------
+
+const SYSTEM_PROMPT_BASE = `You write cover letters that get interviews. Every letter must answer two questions:
+
+1. "Why is this person right for US?" — specific value they will bring.
+2. "Why are WE right for this person?" — why this is a genuine match, not just any job.
+
+ABSOLUTE RULES — VIOLATIONS MAKE THE LETTER WORTHLESS:
+
+FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write them. Do NOT rephrase them. Simply avoid the sentiment entirely:
+- "I'm excited" / "I am excited" (in ANY form — "excited about," "excited to," "excited for")
+- "I'm confident" / "I am confident"
+- "I'm eager" / "I am eager"
+- "I'm thrilled" / "thrilled at the opportunity"
+- "I'm passionate about" / "I am passionate"
+- "I'm impressed by" / "I am impressed"
+- "I believe my skills align"
 - "leverage my expertise"
-- "I am confident that..."
-- "thrilled at the opportunity"
 - "unique blend of skills"
 - "proven track record"
-- Any phrase that parrots corporate jargon from the job description verbatim
+- "push(ing) the boundaries"
+- "meaningful impact" / "significant impact"
+- "I'm looking forward to discussing" / "looking forward to the opportunity"
+- "resonate(s) with me"
+- "align(s) well with"
+- "strong/great fit for this role"
 
-DO NOT match the company's corporate voice. Real humans don't talk like job descriptions. Write like a smart, articulate person having a conversation — not like a corporate press release.
+Instead of saying you're excited/confident/eager, SHOW it through specific knowledge and concrete plans. "Your recent move into enterprise AI data with the DoD contract tells me Scale needs someone who's built FedRAMP-compliant pipelines — I did exactly that at Cloudflare" conveys excitement through specificity.
 
-DO NOT just list keywords from the job description. Instead, tell SPECIFIC STORIES from the resume that demonstrate relevant capability. "I led the migration from monolith to microservices, cutting deploy time from 2 hours to 8 minutes" beats "I have extensive experience in system architecture" every time.
+FORBIDDEN STRUCTURE — do NOT write a 4-paragraph letter that follows this template:
+1. Company praise + funding mention
+2. One resume story
+3. "What draws me to [Company]..."
+4. "I'm looking forward to discussing..."
+
+Paragraph 4 as described above is PURE FILLER. Never write it. End with substance — a specific idea, a question, a concrete next step.
 
 WHAT TO DO:
-- Open with something specific that shows genuine knowledge of the company (a recent product launch, blog post, mission detail — NOT just quoting their job posting)
-- Tell 1-2 concrete stories from the resume that directly answer "what will you do for us?"
-- Show why this company specifically is a real match — why this role is the natural next step for this person
-- Use first-person conversational language. Short sentences are fine. Fragments too, occasionally.
-- Sound like someone who is genuinely good at their job and knows it — confident without being arrogant
-- End with a specific, forward-looking statement about what you'd want to work on
+- Open with a HOOK that shows real knowledge: a technical insight, a product observation, a trend the company is riding. NOT "I've been following [Company]'s impressive growth."
+- Mine 2-3 stories from the resume, including ones that aren't the most obvious. Look for strategic differentiators — unusual projects, cross-functional wins, unique credentials.
+- Connect resume stories DIRECTLY to job requirements with specifics. Name the tech stack, the scale, the business outcome.
+- Write in first person. Short sentences. Fragments occasionally. No corporate jargon.
+- End with something specific you'd want to build, fix, or explore at the company. Not a generic "let's chat."
+
+STRUCTURAL VARIETY — use one of these structures (pick the best fit, don't always use the same one):
+
+Structure A (Hook + Two Stories):
+- Hook showing company knowledge → Story 1 mapped to their need → Story 2 mapped to another need → Specific thing you'd want to work on there
+
+Structure B (Problem-Solution):
+- Identify a challenge the company faces (from job description or public info) → Show how your experience solves it with 2 examples → Why you specifically want to solve this problem at this company
+
+Structure C (Narrative Thread):
+- One connecting theme that links your background to their mission → Weave 2-3 resume details into that narrative → Close with how that theme plays out in this role
 
 FORMAT:
-- 3-4 paragraphs, 250-350 words
-- No header/addresses/dates — just the letter body
-- No placeholder brackets — use actual names from the job description
+- 2-3 paragraphs, 200-250 words. HARD MAXIMUM: 250 words. Shorter is better. Every sentence must earn its place.
+- No header/addresses/dates — just the letter body.
+- No placeholder brackets — use actual names from the job description.
 
-The output should be ONLY the cover letter text. No explanations, no meta-commentary.`;
+Output ONLY the cover letter text. No explanations, no meta-commentary, no "Here is your cover letter."`;
+
+const FEW_SHOT_JUNIOR = `
+EXAMPLE — Junior candidate (new grad applying for SWE role):
+
+"Netflix processes 80% of user engagement through recommendations — and at Rakuten, I built something similar at smaller scale. Our transformer-based engine increased click-through rates by 28% and added $15M in quarterly GMV across Rakuten Ichiba. The core challenge was the same one Netflix faces: making sense of billions of signals to surface the right content.
+
+What I'd bring is practical ML pipeline experience at real scale. At Sony AI, I optimized inference by combining quantization and model pruning to cut latency by 60% — the kind of unsexy-but-critical work that makes recommendation systems actually usable at Netflix's throughput. I've also published at RecSys and ACL, so I can contribute to research alongside shipping production models.
+
+One thing I'd want to dig into: Netflix operates across 190+ countries, and my cross-lingual transfer learning research maps directly to multilingual recommendation challenges. I have specific ideas about how attention mechanisms could improve cold-start performance for non-English content catalogs."
+
+Notice: No "I'm excited." No "I'm confident." No filler closing. Opens with a technical hook. Ends with a specific idea. 170 words.`;
+
+const FEW_SHOT_SENIOR = `
+EXAMPLE — Senior/executive candidate (VP Engineering applying for CTO):
+
+"Scale AI's $1B round and the DoD data-labeling contract signal a shift from startup to platform company — a transition I've led before. At Datadog, I took the engineering org from 85 to 180 people while migrating from monolith to service-oriented architecture handling 40 trillion data points daily. Attrition stayed below 8% through that upheaval because I built a culture where senior ICs had real ownership, not just titles.
+
+The CTO role here requires someone who can hold both the technical architecture and the org design in their head simultaneously. I've done this at three companies now. At Cloudflare, I launched the Workers platform from zero to 500K developers. At Google, I was an early engineer on DynamoDB. Each time, the hard part wasn't the technology — it was building the team and systems that let the technology compound. I also led M&A technical due diligence for two acquisitions at Datadog, which maps directly to Scale's growth-by-acquisition strategy.
+
+The specific problem I'd want to own first: your platform reliability during the enterprise push. I cut infrastructure costs by $12M at Datadog during a similar scaling phase. The playbook is similar, but Scale's data pipeline complexity makes it a harder and more interesting problem."
+
+Notice: No "I'm excited." No hedging. Authoritative, direct. Leads with strategic insight about the company's trajectory. Names specific scale numbers. Ends with a concrete plan, not a request for a meeting. 220 words.`;
+
+// Seniority-specific voice instructions
+const SENIORITY_INSTRUCTIONS: Record<SeniorityLevel, string> = {
+  junior: `SENIORITY CONTEXT: This candidate is early-career (junior level). Write with:
+- Competent confidence, not false modesty or puppy-dog eagerness
+- Emphasis on specific technical skills, projects, and what they built
+- Frame internships and projects as real work with real outcomes
+- Show they can contribute immediately, not that they're "eager to learn"
+- Do NOT use words like "eager," "opportunity to learn," or "grow" — those signal junior insecurity. Instead, show capability through specifics.`,
+
+  mid: `SENIORITY CONTEXT: This candidate is mid-career (3-7 years experience). Write with:
+- Matter-of-fact competence — they've shipped things, they know what works
+- Emphasis on scope of impact: team-level wins, cross-functional projects
+- Connect the dots between their trajectory and why this role is the logical next step
+- Balance technical depth with emerging leadership signals`,
+
+  senior: `SENIORITY CONTEXT: This candidate is senior (7+ years, senior/staff/lead titles). Write with:
+- Authoritative voice — they are evaluating the company as much as the company evaluates them
+- Emphasis on strategic impact: org-level decisions, architecture choices, business outcomes
+- Show pattern recognition: "I've seen this problem before at [Company] and here's how I solved it"
+- The letter should read like a peer conversation with the hiring manager, not an application`,
+
+  executive: `SENIORITY CONTEXT: This candidate is executive-level (VP/C-suite, 12+ years). Write with:
+- Commanding authority. No hedging, no softening, no "I believe." Direct declarative statements.
+- Strategic framing: talk about company trajectory, market position, org-building philosophy
+- Their experience TELLS the company what it needs — they don't ask permission
+- Reference leadership scale (team size, budget, org growth) as naturally as engineers reference tech stack
+- The tone should feel like a board presentation, not a job application
+- NEVER use eager/excited/looking forward — these are catastrophically wrong for this level`,
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -174,16 +504,33 @@ export async function POST(request: NextRequest) {
     }
 
     // -----------------------------------------------------------------------
+    // Detect seniority and build dynamic system prompt
+    // -----------------------------------------------------------------------
+    const { level: seniorityLevel } = detectSeniority(resume);
+
+    // Pick the right few-shot example based on seniority
+    const fewShotExample =
+      seniorityLevel === "executive" || seniorityLevel === "senior"
+        ? FEW_SHOT_SENIOR
+        : FEW_SHOT_JUNIOR;
+
+    const systemPrompt = [
+      SYSTEM_PROMPT_BASE,
+      fewShotExample,
+      SENIORITY_INSTRUCTIONS[seniorityLevel],
+    ].join("\n\n");
+
+    // -----------------------------------------------------------------------
     // Generate the cover letter
     // -----------------------------------------------------------------------
 
     const toneInstructions: Record<string, string> = {
       professional:
-        "Write in a polished, formal professional tone. Confident but not arrogant.",
+        "Write in a polished, direct tone. Authoritative but not arrogant. No filler phrases.",
       enthusiastic:
-        "Write with genuine energy and passion. Show excitement about the role and company while remaining professional.",
+        "Write with energy that comes from SPECIFICITY, not adjectives. Show genuine interest through detailed knowledge of the company and concrete plans — never through phrases like 'excited' or 'thrilled.' The enthusiasm should be implicit in the depth of engagement, not stated.",
       conversational:
-        "Write in a friendly, approachable tone. Professional but warm, like talking to a respected colleague.",
+        "Write like a smart person talking to a respected peer over coffee. Short sentences. Some fragments. Professional but warm. No corporate voice at all.",
     };
 
     let userPrompt = `TONE: ${toneInstructions[tone] || toneInstructions.professional}
@@ -195,16 +542,20 @@ JOB DESCRIPTION:
 ${jobDescription}`;
 
     if (whyCompany?.trim()) {
-      userPrompt += `\n\nWHY THIS COMPANY (in the candidate's own words):
+      userPrompt += `\n\nWHY THIS COMPANY (in the candidate's own words — weave this in, it's their authentic voice):
 ${whyCompany.trim()}`;
     }
 
     if (whyYou?.trim()) {
-      userPrompt += `\n\nWHAT MAKES THIS CANDIDATE DIFFERENT (in their own words):
+      userPrompt += `\n\nWHAT MAKES THIS CANDIDATE DIFFERENT (in their own words — this is gold, use it prominently):
 ${whyYou.trim()}`;
     }
 
-    userPrompt += `\n\nWrite the cover letter now. Remember: sound human, tell specific stories, answer "why them for us" and "why us for them."`;
+    userPrompt += `\n\nWrite the cover letter now. 200-250 words max. Remember:
+- Zero banned phrases (no "excited," "confident," "looking forward to discussing")
+- Open with a specific hook, not "I've been following [Company]"
+- Mine 2-3 stories from the resume including non-obvious differentiators
+- End with substance (a specific idea or plan), NOT "I'd love to discuss"`;
 
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
@@ -215,15 +566,15 @@ ${whyYou.trim()}`;
 
     const groq = getGroqClient();
 
-    // Stream the response
+    // Stream the response, but buffer it for post-processing
     const stream = await groq.chat.completions.create({
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       model: "llama-3.3-70b-versatile",
       temperature: 0.7,
-      max_tokens: 2048,
+      max_tokens: 1536,
       stream: true,
     });
 
@@ -234,17 +585,33 @@ ${whyYou.trim()}`;
       setCookieHeaders.push(purchaseCookieHeader(updatedPurchase, maxAge));
     }
 
-    // Create a readable stream
+    // Buffer the full response, then post-process banned phrases before
+    // streaming to the client. We collect all chunks first because regex
+    // rewrites need the complete text.
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          let fullText = "";
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content;
             if (content) {
-              controller.enqueue(encoder.encode(content));
+              fullText += content;
             }
           }
+
+          // Post-process: rewrite banned phrases
+          const { cleaned, rewriteCount } = rewriteBannedPhrases(fullText);
+          const remaining = countRemainingBanned(cleaned);
+
+          if (rewriteCount > 0 || remaining.length > 0) {
+            console.warn(
+              `[ApplyFaster] Banned phrase post-processing: rewrote ${rewriteCount} patterns. ` +
+                `Remaining after rewrite: ${remaining.length > 0 ? remaining.join(", ") : "none"}`
+            );
+          }
+
+          controller.enqueue(encoder.encode(cleaned));
           controller.close();
         } catch (err) {
           controller.error(err);
