@@ -74,6 +74,16 @@ const BANNED_PHRASES: readonly string[] = [
   "great fit for this role",
   "strong fit for this role",
   "strong candidate for this role",
+  "will serve me well",
+  "can be applied to",
+  "will be crucial",
+  "data-driven decision-making",
+  "strategic growth initiatives",
+  "navigating the complexities",
+  "actionable recommendations",
+  "can inform",
+  "will enable me to",
+  "will be valuable in",
 ] as const;
 
 /**
@@ -177,6 +187,56 @@ function rewriteBannedPhrases(text: string): {
     {
       pattern: /I(?:'d|'d| would) love the opportunity to/gi,
       replacement: "I'd like to",
+    },
+    // "will serve me well" -> "applies here"
+    {
+      pattern: /will serve me well/gi,
+      replacement: "applies here",
+    },
+    // "can be applied to" -> "maps to"
+    {
+      pattern: /can be applied to/gi,
+      replacement: "maps to",
+    },
+    // "will be crucial" -> "matters"
+    {
+      pattern: /will be crucial/gi,
+      replacement: "matters",
+    },
+    // "data-driven decision-making" -> "using data to decide"
+    {
+      pattern: /data-driven decision[- ]making/gi,
+      replacement: "using data to decide",
+    },
+    // "strategic growth initiatives" -> "growth work"
+    {
+      pattern: /strategic growth initiatives/gi,
+      replacement: "growth work",
+    },
+    // "navigating the complexities (of)" -> "working through"
+    {
+      pattern: /navigating the complexities(?: of)?/gi,
+      replacement: "working through",
+    },
+    // "actionable recommendations" -> "clear recommendations"
+    {
+      pattern: /actionable recommendations/gi,
+      replacement: "clear recommendations",
+    },
+    // "can inform [Company]'s" -> "can shape [Company]'s"
+    {
+      pattern: /can inform\b/gi,
+      replacement: "can shape",
+    },
+    // "will enable me to" -> "lets me"
+    {
+      pattern: /will enable me to/gi,
+      replacement: "lets me",
+    },
+    // "will be valuable in" -> "helps with"
+    {
+      pattern: /will be valuable in/gi,
+      replacement: "helps with",
     },
   ];
 
@@ -328,6 +388,16 @@ FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write t
 - "resonate(s) with me"
 - "align(s) well with"
 - "strong/great fit for this role"
+- "will serve me well"
+- "can be applied to"
+- "will be crucial"
+- "data-driven decision-making"
+- "strategic growth initiatives"
+- "navigating the complexities"
+- "actionable recommendations"
+- "can inform [Company]'s"
+- "will enable me to"
+- "will be valuable in"
 
 Instead of saying you're excited/confident/eager, SHOW it through specific knowledge and concrete plans. "Your recent move into enterprise AI data with the DoD contract tells me Scale needs someone who's built FedRAMP-compliant pipelines — I did exactly that at Cloudflare" conveys excitement through specificity.
 
