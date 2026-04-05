@@ -728,6 +728,7 @@ ${whyYou.trim()}`;
 - Zero banned phrases (no "excited," "confident," "looking forward to discussing")
 - Open with a specific hook, not "I've been following [Company]"
 - Mine 2-3 stories from the resume including non-obvious differentiators
+- MANDATORY: If the resume lists certifications, degrees, or professional credentials (e.g., PMP, CFA, Google certificates, AWS certs, Reforge), you MUST mention at least one by name. For career changers, these prove commitment — omitting them is a critical error.
 - End with substance (a specific idea or plan), NOT "I'd love to discuss"`;
 
     if (!process.env.GROQ_API_KEY) {
