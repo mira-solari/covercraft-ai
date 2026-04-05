@@ -76,6 +76,13 @@ const BANNED_PHRASES: readonly string[] = [
   "strong candidate for this role",
   "will serve me well",
   "can be applied to",
+  "could be applied to",
+  "will also be an asset",
+  "would be an asset",
+  "could be an asset",
+  "this experience taught me",
+  "this taught me",
+  "given my experience",
   "will be crucial",
   "data-driven decision-making",
   "strategic growth initiatives",
@@ -193,10 +200,25 @@ function rewriteBannedPhrases(text: string): {
       pattern: /will serve me well/gi,
       replacement: "applies here",
     },
-    // "can be applied to" -> "maps to"
+    // "can/could/would be applied to" -> "maps to"
     {
-      pattern: /can be applied to/gi,
+      pattern: /(?:can|could|would|should) be applied to/gi,
       replacement: "maps to",
+    },
+    // "will also be an asset" / "would be an asset" / "could be an asset" -> "matters here"
+    {
+      pattern: /(?:will also be|would be|could be|will be) an asset/gi,
+      replacement: "matters here",
+    },
+    // "this experience taught me" / "this taught me" -> remove preamble
+    {
+      pattern: /this (?:experience )?taught me (?:the (?:value|importance) of )?/gi,
+      replacement: "",
+    },
+    // "given my experience" -> "from"
+    {
+      pattern: /given my experience (?:in |with )?/gi,
+      replacement: "from my work in ",
     },
     // "will be crucial" -> "matters"
     {
