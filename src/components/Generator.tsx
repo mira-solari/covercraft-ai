@@ -7,6 +7,7 @@ type ActiveTab = "cover-letter" | "resume-tailoring";
 
 interface TailorResult {
   tailoredResume: string;
+  gaps: string;
   suggestions: string;
 }
 
@@ -832,6 +833,32 @@ export default function Generator({
                     </div>
                   )}
                 </div>
+
+                {/* Skill Gaps */}
+                {tailorResult && tailorResult.gaps && (
+                  <div className="mt-4 animate-fade-in">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Skill Gaps
+                    </label>
+                    <div className="space-y-2">
+                      {parseSuggestions(tailorResult.gaps).map(
+                        (gap, i) => (
+                          <div
+                            key={i}
+                            className="flex gap-2.5 px-3 py-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg text-sm"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-amber-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-[10px] font-bold text-amber-400">
+                                {i + 1}
+                              </span>
+                            </div>
+                            <span className="text-gray-300">{gap}</span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Suggestions */}
                 {tailorResult && tailorResult.suggestions && (
