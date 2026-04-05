@@ -83,6 +83,11 @@ const BANNED_PHRASES: readonly string[] = [
   "this experience taught me",
   "this taught me",
   "given my experience",
+  "showcasing my ability",
+  "signals a significant shift",
+  "has given me a unique understanding",
+  "understand the intricacies of",
+  "aligns with the requirements",
   "will be crucial",
   "data-driven decision-making",
   "strategic growth initiatives",
@@ -220,6 +225,31 @@ function rewriteBannedPhrases(text: string): {
       pattern: /given my experience (?:in |with )?/gi,
       replacement: "from my work in ",
     },
+    // "showcasing my ability to" -> "I can"
+    {
+      pattern: /showcasing my ability to/gi,
+      replacement: "showing I can",
+    },
+    // "signals a significant shift" -> "marks a shift"
+    {
+      pattern: /signals a significant shift/gi,
+      replacement: "marks a shift",
+    },
+    // "has given me a unique understanding" -> "means I understand"
+    {
+      pattern: /has given me a unique understanding/gi,
+      replacement: "means I understand",
+    },
+    // "understand the intricacies of" -> "understand"
+    {
+      pattern: /understand the intricacies of/gi,
+      replacement: "understand",
+    },
+    // "aligns with the requirements for this role" -> "fits what you need"
+    {
+      pattern: /aligns with the requirements (?:for|of) this role/gi,
+      replacement: "fits what you need",
+    },
     // "will be crucial" -> "matters"
     {
       pattern: /will be crucial/gi,
@@ -293,12 +323,14 @@ function rewriteBannedPhrases(text: string): {
         .replace(/\ba a\b/g, "a")
         // Double spaces
         .replace(/ {2,}/g, " ")
+        // Remove orphaned "And" at start of sentence after phrase removal
+        // NOTE: "To" intentionally excluded — "To [verb]" is a legitimate purpose clause
+        .replace(/\.\s+And\s+/g, ". ")
         // Capitalize after period if removal left lowercase start
+        // (MUST run AFTER And/To removal which can create new lowercase-after-period)
         .replace(/\.\s+([a-z])/g, (_match, letter: string) =>
           `. ${letter.toUpperCase()}`
         )
-        // Remove leading "and" or "to" at start of sentence after phrase removal
-        .replace(/\.\s+(?:And|To)\s+/g, ". ")
         // Leading spaces on lines
         .replace(/^\s+/gm, "")
         .trim()
