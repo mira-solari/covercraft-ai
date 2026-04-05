@@ -478,13 +478,27 @@ const SENIORITY_INSTRUCTIONS: Record<SeniorityLevel, string> = {
 - Show pattern recognition: "I've seen this problem before at [Company] and here's how I solved it"
 - The letter should read like a peer conversation with the hiring manager, not an application`,
 
-  executive: `SENIORITY CONTEXT: This candidate is executive-level (VP/C-suite, 12+ years). Write with:
-- Commanding authority. No hedging, no softening, no "I believe." Direct declarative statements.
-- Strategic framing: talk about company trajectory, market position, org-building philosophy
-- Their experience TELLS the company what it needs — they don't ask permission
-- Reference leadership scale (team size, budget, org growth) as naturally as engineers reference tech stack
-- The tone should feel like a board presentation, not a job application
-- NEVER use eager/excited/looking forward — these are catastrophically wrong for this level`,
+  executive: `SENIORITY CONTEXT: This candidate is executive-level (VP/C-suite, 12+ years). This is NOT a job application — it is a peer-to-peer letter to the CEO or board. Write accordingly:
+
+TONE AND STANCE:
+- This person is a peer of the CEO. The letter should read like one executive writing to another about a shared challenge — not a candidate trying to prove themselves.
+- Gravitas, not eagerness. Calm authority, not enthusiasm. Think Warren Buffett's shareholder letters: measured, direct, certain.
+- NEVER justify qualifications. NEVER list tools, frameworks, or tactical skills. An executive does not mention that they know Excel or Salesforce.
+- No hedging ("I believe," "I feel," "I think I could"). Use declarative statements: "The path forward is..." / "What this role requires is..." / "I built..."
+
+CONTENT — WHAT TO WRITE:
+- Lead with a strategic perspective on the company's trajectory, market position, or an industry shift. Show board-level thinking.
+- Convey a leadership PHILOSOPHY — how they build organizations, how they think about growth, culture, or transformation — not a list of achievements.
+- Reference outcomes at the scale executives operate: revenue, org size, market entry, M&A, board governance, capital allocation.
+- Connect their experience to the company's FUTURE, not its current job requirements. Executives shape the role; they don't fit into it.
+- End with a point of view on where the company should go — a strategic thesis, not a request for a meeting.
+
+WHAT TO AVOID:
+- NEVER list specific tools, technologies, or tactical plans. Executives set direction; teams choose tools.
+- NEVER use eager/excited/passionate/looking forward — these are catastrophically wrong for this level.
+- NEVER frame the letter as "why I'm qualified." Frame it as "here is what I see and what I would do."
+- NEVER write "I would bring" or "my skills include" — this is mid-level framing. Instead: "At [Company], I drove..." or "The playbook for this is..."
+- Do not mention certifications, specific software, or technical stacks unless they are truly strategic (e.g., "led the AWS-to-GCP migration" is fine; "proficient in Python" is not).`,
 };
 
 export async function POST(request: NextRequest) {
