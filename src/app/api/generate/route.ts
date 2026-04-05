@@ -101,6 +101,7 @@ const BANNED_PHRASES: readonly string[] = [
   "instrumental in informing",
   "solid grasp",
   "strong foundation",
+  "solid foundation",
 ] as const;
 
 /**
@@ -320,6 +321,11 @@ function rewriteBannedPhrases(text: string): {
       pattern: /strong foundation/gi,
       replacement: "background",
     },
+    // "solid foundation" -> "background"
+    {
+      pattern: /solid foundation/gi,
+      replacement: "background",
+    },
   ];
 
   for (const { pattern, replacement } of rewrites) {
@@ -462,6 +468,9 @@ ZERO FABRICATION — THIS IS THE MOST IMPORTANT RULE:
 - Every factual claim in the cover letter must trace back to a specific line in the resume. If you cannot point to the source, delete the claim.
 - Do NOT infer or extrapolate unstated experience. "Built a CLI tool" does NOT mean "built a payments-focused CLI tool" unless the resume explicitly says payments. "Interned at Shopify" does NOT mean "optimized payment processing latency at Shopify" unless the resume says exactly that.
 - It is better to write a shorter, honest letter than a longer one with fabricated details.
+- CRITICAL: The job description lists what the EMPLOYER wants. The resume lists what the CANDIDATE has. These are DIFFERENT things. If the job requires Python but the resume does not mention Python, do NOT write "I have Python skills" or "I developed my Python expertise." Instead, highlight transferable skills or express genuine interest in learning. NEVER claim proficiency in a technology solely because the job description mentions it.
+  BAD: "that's where I developed my Python skills" (resume says "TA for distributed systems" — no mention of Python)
+  GOOD: "My distributed systems background gives me strong fundamentals for working with the infrastructure patterns your team uses"
 
 FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write them. Do NOT rephrase them. Simply avoid the sentiment entirely:
 - "I'm excited" / "I am excited" (in ANY form — "excited about," "excited to," "excited for")
@@ -495,6 +504,7 @@ FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write t
 - "instrumental in informing"
 - "solid grasp"
 - "strong foundation"
+- "solid foundation"
 
 Instead of saying you're excited/confident/eager, SHOW it through specific knowledge and concrete plans. "Your recent move into enterprise AI data with the DoD contract tells me Scale needs someone who's built FedRAMP-compliant pipelines — I did exactly that at Cloudflare" conveys excitement through specificity.
 
