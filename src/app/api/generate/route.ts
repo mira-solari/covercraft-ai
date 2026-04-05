@@ -102,6 +102,20 @@ const BANNED_PHRASES: readonly string[] = [
   "solid grasp",
   "strong foundation",
   "solid foundation",
+  "presents a compelling opportunity",
+  "equipped me with",
+  "i am prepared to leverage",
+  "i'm prepared to leverage",
+  "positioned me to",
+  "contribute to the engineering culture",
+  "apply my skills and experience",
+  "demonstrating my expertise",
+  "as a seasoned executive",
+  "as a seasoned professional",
+  "drive continued success",
+  "unique perspective",
+  "unique insight",
+  "help inform",
 ] as const;
 
 /**
@@ -159,10 +173,10 @@ function rewriteBannedPhrases(text: string): {
       pattern: /I believe (?:that )?my/gi,
       replacement: "My",
     },
-    // "leverage my expertise" -> "apply what I know"
+    // "leverage my [adj]? expertise/experience/skills/knowledge/background/abilities/proficiency" -> "use my experience"
     {
-      pattern: /leverage my expertise/gi,
-      replacement: "apply what I know",
+      pattern: /leverage my (?:\w+ )?(?:expertise|experience|skills|knowledge|background|abilities|proficiency)/gi,
+      replacement: "use my experience",
     },
     // "unique blend" -> "combination"
     { pattern: /unique blend/gi, replacement: "combination" },
@@ -206,9 +220,9 @@ function rewriteBannedPhrases(text: string): {
       pattern: /I(?:'d|'d| would) love the opportunity to/gi,
       replacement: "I'd like to",
     },
-    // "will serve me well" -> "applies here"
+    // "will/would serve me/[Company] well" -> "applies here"
     {
-      pattern: /will serve me well/gi,
+      pattern: /(?:will|would) serve (?:me|\w+) well/gi,
       replacement: "applies here",
     },
     // "can/could/would be applied to" -> "maps to"
@@ -241,9 +255,9 @@ function rewriteBannedPhrases(text: string): {
       pattern: /signals a significant shift/gi,
       replacement: "marks a shift",
     },
-    // "has given me a unique understanding" -> "means I understand"
+    // "has given me a unique understanding/perspective/insight" -> "means I understand"
     {
-      pattern: /has given me a unique understanding/gi,
+      pattern: /has given me a unique (?:understanding|perspective|insight)/gi,
       replacement: "means I understand",
     },
     // "understand the intricacies of" -> "understand"
@@ -281,9 +295,9 @@ function rewriteBannedPhrases(text: string): {
       pattern: /actionable recommendations/gi,
       replacement: "clear recommendations",
     },
-    // "can inform [Company]'s" -> "can shape [Company]'s"
+    // "can/help inform [Company]'s" -> "can shape [Company]'s"
     {
-      pattern: /can inform\b/gi,
+      pattern: /(?:can|help) inform\b/gi,
       replacement: "can shape",
     },
     // "will enable me to" -> "lets me"
@@ -296,10 +310,10 @@ function rewriteBannedPhrases(text: string): {
       pattern: /will be valuable in/gi,
       replacement: "helps with",
     },
-    // "unique understanding" -> "understanding"
+    // "unique understanding/perspective/insight/blend/combination" -> drop the "unique"
     {
-      pattern: /unique understanding/gi,
-      replacement: "understanding",
+      pattern: /unique (understanding|perspective|insight|blend|combination)/gi,
+      replacement: "$1",
     },
     // "further solidifying my expertise" -> remove (filler clause)
     {
@@ -325,6 +339,56 @@ function rewriteBannedPhrases(text: string): {
     {
       pattern: /solid foundation/gi,
       replacement: "background",
+    },
+    // "presents a compelling opportunity" -> remove sentence
+    {
+      pattern: /[^.\n]*presents a compelling opportunity[^.\n]*\.\s?/gi,
+      replacement: "",
+    },
+    // "equipped me with (the necessary/the/valuable)" -> "gave me"
+    {
+      pattern: /equipped me with (?:the (?:necessary |valuable )?)?/gi,
+      replacement: "gave me ",
+    },
+    // "I am/I'm prepared to leverage" -> "I plan to apply"
+    {
+      pattern: /I(?:'m|'m| am) prepared to leverage/gi,
+      replacement: "I plan to apply",
+    },
+    // "positioned me to" -> "prepared me to"
+    {
+      pattern: /positioned me to/gi,
+      replacement: "prepared me to",
+    },
+    // "contribute to the engineering culture" -> "contribute to the team"
+    {
+      pattern: /contribute to the (?:engineering )?culture/gi,
+      replacement: "contribute to the team",
+    },
+    // "apply my skills and experience to enhance/improve" -> "improve"
+    {
+      pattern: /apply my skills and experience to (?:enhance|improve)/gi,
+      replacement: "improve",
+    },
+    // "demonstrating my/the expertise/proficiency/ability/skills in" -> remove clause
+    {
+      pattern: /,?\s*demonstrating (?:my |the )?(?:expertise|proficiency|ability|skills) in[^,.]*[,.]\s*/gi,
+      replacement: ". ",
+    },
+    // "as a seasoned executive/professional/engineer" -> remove self-descriptor
+    {
+      pattern: /[Aa]s a seasoned \w+,?\s*/gi,
+      replacement: "",
+    },
+    // "drive [Company]'s continued success" -> remove clause
+    {
+      pattern: /,?\s*(?:to )?drive \w+'s continued success\.?\s*/gi,
+      replacement: ". ",
+    },
+    // "that's a challenge I'm ready to take on" -> remove formulaic closing
+    {
+      pattern: /[^.\n]*(?:that's a challenge|that is a challenge) I(?:'m|'m| am) ready to take on[^.\n]*\.\s?/gi,
+      replacement: "",
     },
   ];
 
@@ -505,6 +569,16 @@ FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write t
 - "solid grasp"
 - "strong foundation"
 - "solid foundation"
+- "presents a compelling opportunity"
+- "equipped me with"
+- "I am prepared to leverage" / "leverage my [anything]" (any variant: leverage my experience, leverage my skills, leverage my technical expertise)
+- "positioned me to"
+- "unique perspective" / "unique insight" (any "unique [noun]" variant)
+- "demonstrating my expertise in" (any variant: demonstrating my skills, demonstrating proficiency)
+- "contribute to the engineering culture"
+- "apply my skills and experience to enhance"
+- "as a seasoned executive" / "as a seasoned [anything]"
+- "drive [Company]'s continued success"
 
 Instead of saying you're excited/confident/eager, SHOW it through specific knowledge and concrete plans. "Your recent move into enterprise AI data with the DoD contract tells me Scale needs someone who's built FedRAMP-compliant pipelines — I did exactly that at Cloudflare" conveys excitement through specificity.
 
@@ -739,17 +813,20 @@ SYNTAX RULES:
 - Measured, confident voice. Think senior professional writing to a peer.`,
       enthusiastic:
         `TONE: ENTHUSIASTIC — high-energy, forward-looking, action-oriented. This should feel like someone who cannot WAIT to start building. Distinct from conversational (which is relaxed and peer-like) — enthusiastic is fast-paced and momentum-driven.
+
+CRITICAL FORMAT RULE:
+ALWAYS write in complete prose paragraphs — NEVER use bullet points, numbered lists, or dash-separated items. Enthusiastic means energetic PROSE, not a list of excited fragments. Each paragraph must be a flowing block of connected sentences. If you catch yourself starting a line with "- " or "* " or a number, STOP and rewrite it as a sentence within a paragraph.
+
 SYNTAX RULES:
-- SENTENCE LENGTH: Favor SHORT punchy sentences. At least half should be under 10 words. "I shipped it in three weeks." "That number stuck with me."
 - USE CONTRACTIONS: "I've", "I'd", "that's", "it's" — mandatory, at least 4 total.
-- Start at least TWO sentences with action verbs ("Built", "Led", "Shipped", "Cut", "Doubled").
-- Use dashes (—) for energetic asides at least twice.
+- Mix short and medium sentences within paragraphs. Short sentences hit harder when surrounded by longer ones — "I shipped it in three weeks" lands better inside a paragraph than as a standalone bullet.
+- Use dashes (—) for energetic asides at least twice, embedded within sentences.
 - FORWARD-LOOKING language: at least 2 sentences should point to the future — what you will build, what you want to tackle, what you see coming. Use "will", "want to", "plan to", "can't wait to dig into".
-- ACTION FRAMING: Lead with what you DID and what you WILL DO, not what you learned or observed. Every paragraph should have at least one concrete action.
+- ACTION FRAMING: Lead with what you DID and what you WILL DO, not what you learned or observed. Every paragraph should open with a concrete action or result.
 - Show excitement through DEPTH OF KNOWLEDGE about the company, not emotion words.
 - NEVER use "excited", "thrilled", "passionate", "eager" — these are BANNED.
 - End with a specific, energetic statement about what you want to build or fix at the company. Make the reader feel your momentum.
-- KEY DIFFERENCE FROM CONVERSATIONAL: Conversational is relaxed — like coffee chat. Enthusiastic is DRIVEN — like someone pitching their co-founder on a new feature at 2am.`,
+- KEY DIFFERENCE FROM CONVERSATIONAL: Conversational is relaxed — like coffee chat. Enthusiastic is DRIVEN — like someone pitching their co-founder on a new feature at 2am. But both use PROSE PARAGRAPHS, never bullet lists.`,
       conversational:
         `TONE: CONVERSATIONAL — like a smart person talking to a respected peer over coffee.
 SYNTAX RULES:
