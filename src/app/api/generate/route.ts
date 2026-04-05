@@ -466,6 +466,7 @@ Paragraph 4 as described above is PURE FILLER. Never write it. End with substanc
 WHAT TO DO:
 - Open with a HOOK that shows real knowledge: a technical insight, a product observation, a trend the company is riding. NOT "I've been following [Company]'s impressive growth."
 - Mine 2-3 stories from the resume, including ones that aren't the most obvious. Look for strategic differentiators — unusual projects, cross-functional wins, unique credentials.
+- ALWAYS mention relevant certifications and credentials (e.g., Google PM Certificate, CFA, AWS Solutions Architect, PMP). For career changers especially, these signal deliberate preparation and MUST be included — they bridge the credibility gap.
 - Connect resume stories DIRECTLY to job requirements with specifics. Name the tech stack, the scale, the business outcome.
 - Write in first person. Short sentences. Fragments occasionally. No corporate jargon.
 - End with something specific you'd want to build, fix, or explore at the company. Not a generic "let's chat."
