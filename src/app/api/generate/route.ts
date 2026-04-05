@@ -676,11 +676,33 @@ export async function POST(request: NextRequest) {
 
     const toneInstructions: Record<string, string> = {
       professional:
-        "Write in a polished, direct tone. Authoritative but not arrogant. No filler phrases.",
+        `TONE: PROFESSIONAL — polished and authoritative.
+SYNTAX RULES:
+- Complete sentences only. No fragments.
+- Minimal contractions (use "I have" not "I've", "I would" not "I'd").
+- Average sentence length: 15-25 words.
+- Let achievements speak without enthusiasm markers.
+- Measured, confident voice. Think senior professional writing to a peer.`,
       enthusiastic:
-        "Write with energy that comes from SPECIFICITY, not adjectives. Show genuine interest through detailed knowledge of the company and concrete plans — never through phrases like 'excited' or 'thrilled.' The enthusiasm should be implicit in the depth of engagement, not stated.",
+        `TONE: ENTHUSIASTIC — energetic through specificity, not adjectives.
+SYNTAX RULES:
+- USE CONTRACTIONS: "I've", "I'd", "that's", "it's" — mandatory, at least 3 total.
+- Mix short punchy sentences (5-10 words) with longer ones. Vary rhythm.
+- Start at least one sentence with an action verb ("Built", "Led", "Shipped").
+- Use dashes (—) for energetic asides at least once.
+- Show excitement through DEPTH OF KNOWLEDGE about the company, not emotion words.
+- NEVER use "excited", "thrilled", "passionate", "eager" — these are BANNED.
+- End with a specific idea or plan, stated with forward momentum.`,
       conversational:
-        "Write like a smart person talking to a respected peer over coffee. Short sentences. Some fragments. Professional but warm. No corporate voice at all.",
+        `TONE: CONVERSATIONAL — like a smart person talking to a respected peer over coffee.
+SYNTAX RULES:
+- USE CONTRACTIONS EVERYWHERE: "I've", "I'd", "that's", "it's", "I'm", "don't" — mandatory.
+- Allow sentence fragments. "Which is exactly the problem you're solving."
+- Start at least 2 sentences with "And" or "But".
+- Use "you" or "your" to address the reader directly at least twice.
+- Keep most sentences under 15 words. If it sounds like a press release, rewrite it.
+- Read-aloud test: every sentence must sound natural spoken aloud.
+- Use contractions in EVERY paragraph — if a paragraph has zero contractions, rewrite it.`,
     };
 
     let userPrompt = `TONE: ${toneInstructions[tone] || toneInstructions.professional}
