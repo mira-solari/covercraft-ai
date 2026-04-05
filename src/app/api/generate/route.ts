@@ -153,9 +153,10 @@ function rewriteBannedPhrases(text: string): {
       replacement: "a difference",
     },
     // Full filler closings — remove the whole sentence including leading context
+    // Use [^.\n]* instead of [^.]* to avoid crossing paragraph boundaries
     {
       pattern:
-        /[^.]*I(?:'m|'m| am) looking forward to [^.]*\.\s?/gi,
+        /[^.\n]*I(?:'m|'m| am) looking forward to [^.\n]*\.\s?/gi,
       replacement: "",
     },
     // "resonate(s) with me" -> "matters to me"
@@ -166,9 +167,10 @@ function rewriteBannedPhrases(text: string): {
     // "align(s) well with" -> "match(es)"
     { pattern: /aligns? well with/gi, replacement: "matches" },
     // "... make(s) me a great/strong fit/candidate for [role/company]" -> remove whole sentence
+    // Use [^.\n]* instead of [^.]* to avoid crossing paragraph boundaries
     {
       pattern:
-        /[^.]*(?:make(?:s)? me a |(?:a |am a ))(?:great|strong) (?:fit|candidate) for [^.]*\.\s?/gi,
+        /[^.\n]*(?:make(?:s)? me a |(?:a |am a ))(?:great|strong) (?:fit|candidate) for [^.\n]*\.\s?/gi,
       replacement: "",
     },
     // "I'd love the opportunity" -> "I'd like"
@@ -192,27 +194,36 @@ function rewriteBannedPhrases(text: string): {
     if (cleaned !== before) rewriteCount++;
   }
 
-  // Clean up artifacts from phrase removal
+  // Clean up artifacts from phrase removal — process per-paragraph to
+  // preserve intentional paragraph breaks (double newlines).
   cleaned = cleaned
-    // Ensure space after period (sentence removals can leave ".NextSentence")
-    .replace(/\.([A-Z])/g, ". $1")
-    // Remove sentences that became empty or near-empty after rewriting
-    // (e.g., "my skills ." after both rewrites strip the sentence)
-    .replace(/(?:^|\.\s+)[A-Za-z]{0,3}\s*\./g, ".")
-    // Remove orphaned sentence fragments (just punctuation or 1-2 words)
-    .replace(/\.\s*\./g, ".")
-    // "to make a a difference" -> "to make a difference"
-    .replace(/\ba a\b/g, "a")
-    // Double spaces
-    .replace(/ {2,}/g, " ")
-    // Capitalize after period if removal left lowercase start
-    .replace(/\.\s+([a-z])/g, (_match, letter: string) => `. ${letter.toUpperCase()}`)
-    // Remove leading "and" or "to" at start of sentence after phrase removal
-    .replace(/\.\s+(?:And|To)\s+/g, ". ")
-    // Leading spaces on lines
-    .replace(/^\s+/gm, "")
-    // Collapse multiple blank lines
-    .replace(/\n{3,}/g, "\n\n")
+    .split(/\n\n+/)
+    .map((para) =>
+      para
+        // Ensure space after period (sentence removals can leave ".NextSentence")
+        .replace(/\.([A-Z])/g, ". $1")
+        // Remove sentences that became empty or near-empty after rewriting
+        // (e.g., "my skills ." after both rewrites strip the sentence)
+        .replace(/(?:^|\.\s+)[A-Za-z]{0,3}\s*\./g, ".")
+        // Remove orphaned sentence fragments (just punctuation or 1-2 words)
+        .replace(/\.\s*\./g, ".")
+        // "to make a a difference" -> "to make a difference"
+        .replace(/\ba a\b/g, "a")
+        // Double spaces
+        .replace(/ {2,}/g, " ")
+        // Capitalize after period if removal left lowercase start
+        .replace(/\.\s+([a-z])/g, (_match, letter: string) =>
+          `. ${letter.toUpperCase()}`
+        )
+        // Remove leading "and" or "to" at start of sentence after phrase removal
+        .replace(/\.\s+(?:And|To)\s+/g, ". ")
+        // Leading spaces on lines
+        .replace(/^\s+/gm, "")
+        .trim()
+    )
+    // Drop paragraphs that became empty after cleanup
+    .filter((para) => para.length > 0)
+    .join("\n\n")
     .trim();
 
   return { cleaned, rewriteCount };
@@ -348,6 +359,7 @@ Structure C (Narrative Thread):
 
 FORMAT:
 - 2-3 paragraphs, 200-250 words. HARD MAXIMUM: 250 words. Shorter is better. Every sentence must earn its place.
+- PARAGRAPH SEPARATION: Each paragraph MUST be separated by exactly one blank line (two newline characters). Never run paragraphs together. Every paragraph must start on its own line after a blank line.
 - No header/addresses/dates — just the letter body.
 - No placeholder brackets — use actual names from the job description.
 
