@@ -96,6 +96,11 @@ const BANNED_PHRASES: readonly string[] = [
   "can inform",
   "will enable me to",
   "will be valuable in",
+  "unique understanding",
+  "further solidifying my expertise",
+  "instrumental in informing",
+  "solid grasp",
+  "strong foundation",
 ] as const;
 
 /**
@@ -290,6 +295,31 @@ function rewriteBannedPhrases(text: string): {
       pattern: /will be valuable in/gi,
       replacement: "helps with",
     },
+    // "unique understanding" -> "understanding"
+    {
+      pattern: /unique understanding/gi,
+      replacement: "understanding",
+    },
+    // "further solidifying my expertise" -> remove (filler clause)
+    {
+      pattern: /,?\s*further solidifying my expertise[^,.]*[,.]?\s*/gi,
+      replacement: ". ",
+    },
+    // "instrumental in informing" -> "shaped"
+    {
+      pattern: /instrumental in informing/gi,
+      replacement: "shaped",
+    },
+    // "solid grasp" -> "working knowledge"
+    {
+      pattern: /solid grasp/gi,
+      replacement: "working knowledge",
+    },
+    // "strong foundation" -> "background"
+    {
+      pattern: /strong foundation/gi,
+      replacement: "background",
+    },
   ];
 
   for (const { pattern, replacement } of rewrites) {
@@ -425,6 +455,14 @@ const SYSTEM_PROMPT_BASE = `You write cover letters that get interviews. Every l
 
 ABSOLUTE RULES — VIOLATIONS MAKE THE LETTER WORTHLESS:
 
+ZERO FABRICATION — THIS IS THE MOST IMPORTANT RULE:
+- NEVER invent skills, projects, experiences, tools, or technologies not explicitly stated in the resume. If the resume does not mention it, the cover letter does not mention it.
+- NEVER embellish or exaggerate achievements beyond what the resume states. If the resume says "improved latency by 20%", do not write "dramatically optimized performance across the entire platform."
+- If the resume does not mention a technology the job requires, do NOT claim proficiency. It is better to focus on adjacent strengths than to fabricate a match.
+- Every factual claim in the cover letter must trace back to a specific line in the resume. If you cannot point to the source, delete the claim.
+- Do NOT infer or extrapolate unstated experience. "Built a CLI tool" does NOT mean "built a payments-focused CLI tool" unless the resume explicitly says payments. "Interned at Shopify" does NOT mean "optimized payment processing latency at Shopify" unless the resume says exactly that.
+- It is better to write a shorter, honest letter than a longer one with fabricated details.
+
 FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write them. Do NOT rephrase them. Simply avoid the sentiment entirely:
 - "I'm excited" / "I am excited" (in ANY form — "excited about," "excited to," "excited for")
 - "I'm confident" / "I am confident"
@@ -452,6 +490,11 @@ FORBIDDEN PHRASES — using any of these means instant rejection. Do NOT write t
 - "can inform [Company]'s"
 - "will enable me to"
 - "will be valuable in"
+- "unique understanding"
+- "further solidifying my expertise"
+- "instrumental in informing"
+- "solid grasp"
+- "strong foundation"
 
 Instead of saying you're excited/confident/eager, SHOW it through specific knowledge and concrete plans. "Your recent move into enterprise AI data with the DoD contract tells me Scale needs someone who's built FedRAMP-compliant pipelines — I did exactly that at Cloudflare" conveys excitement through specificity.
 
@@ -685,15 +728,18 @@ SYNTAX RULES:
 - Let achievements speak without enthusiasm markers.
 - Measured, confident voice. Think senior professional writing to a peer.`,
       enthusiastic:
-        `TONE: ENTHUSIASTIC — energetic through specificity, not adjectives.
+        `TONE: ENTHUSIASTIC — high-energy, forward-looking, action-oriented. This should feel like someone who cannot WAIT to start building. Distinct from conversational (which is relaxed and peer-like) — enthusiastic is fast-paced and momentum-driven.
 SYNTAX RULES:
-- USE CONTRACTIONS: "I've", "I'd", "that's", "it's" — mandatory, at least 3 total.
-- Mix short punchy sentences (5-10 words) with longer ones. Vary rhythm.
-- Start at least one sentence with an action verb ("Built", "Led", "Shipped").
-- Use dashes (—) for energetic asides at least once.
+- SENTENCE LENGTH: Favor SHORT punchy sentences. At least half should be under 10 words. "I shipped it in three weeks." "That number stuck with me."
+- USE CONTRACTIONS: "I've", "I'd", "that's", "it's" — mandatory, at least 4 total.
+- Start at least TWO sentences with action verbs ("Built", "Led", "Shipped", "Cut", "Doubled").
+- Use dashes (—) for energetic asides at least twice.
+- FORWARD-LOOKING language: at least 2 sentences should point to the future — what you will build, what you want to tackle, what you see coming. Use "will", "want to", "plan to", "can't wait to dig into".
+- ACTION FRAMING: Lead with what you DID and what you WILL DO, not what you learned or observed. Every paragraph should have at least one concrete action.
 - Show excitement through DEPTH OF KNOWLEDGE about the company, not emotion words.
 - NEVER use "excited", "thrilled", "passionate", "eager" — these are BANNED.
-- End with a specific idea or plan, stated with forward momentum.`,
+- End with a specific, energetic statement about what you want to build or fix at the company. Make the reader feel your momentum.
+- KEY DIFFERENCE FROM CONVERSATIONAL: Conversational is relaxed — like coffee chat. Enthusiastic is DRIVEN — like someone pitching their co-founder on a new feature at 2am.`,
       conversational:
         `TONE: CONVERSATIONAL — like a smart person talking to a respected peer over coffee.
 SYNTAX RULES:
@@ -725,6 +771,7 @@ ${whyYou.trim()}`;
     }
 
     userPrompt += `\n\nWrite the cover letter now. 200-250 words max. Remember:
+- ZERO FABRICATION: Every claim must trace to a specific line in the resume above. Do NOT invent projects, skills, technologies, or embellish achievements. If the resume does not say it, the letter does not say it.
 - Zero banned phrases (no "excited," "confident," "looking forward to discussing")
 - Open with a specific hook, not "I've been following [Company]"
 - Mine 2-3 stories from the resume including non-obvious differentiators
